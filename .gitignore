@@ -1,0 +1,12 @@
+neve/
+
+__pycache__/
+.pytest_cache
+.pytest.ini
+.vscode/
+.clang-format
+.clangd
+.DS_Store
+geada_writer.py
+
+*.geada
