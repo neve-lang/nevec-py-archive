@@ -23,12 +23,12 @@ if __name__ == "__main__":
 
         ast = parse.parse()
 
+        print(ast)
+
         had_err = Check().visit(ast)
 
         if had_err:
             exit(1)
-
-        print(ast)
 
         toir = ToIr()
 

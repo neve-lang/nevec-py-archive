@@ -1,9 +1,9 @@
-from nevec.ast.type import Type, Types
+from typing import Self, Optional, List
+
+from nevec.ast.type import *
 from nevec.lex.tok import Tok, TokType, Loc
 
 from enum import auto, Enum
-
-from typing import Self, Optional
 
 class Ast:
     def __init__(self, type: Type, loc: Loc):
@@ -183,6 +183,77 @@ class Show(Expr):
     def __repr__(self) -> str:
         return f"{self.expr}.show"
 
+
+class Table(Expr):
+    def __init__(self, keys: List[Expr], vals: List[Expr], loc: Loc):
+        self.keys: List[Expr] = keys
+        self.vals: List[Expr] = vals
+        self.loc: Loc = loc
+
+        self.type: Type = self.infer_type()
+
+    @staticmethod
+    def empty(loc: Loc) -> "Table":
+        return Table(
+            [],
+            [],
+            loc
+        )
+
+    def infer_type(self) -> Type:
+        type = TableType(Types.UNKNOWN, Types.UNKNOWN)
+
+        if (
+            len(self.keys) != len(self.vals) or
+            self.keys == []
+        ):
+            return type
+
+        first_key = self.keys[0]
+        remaining_keys = self.keys[1:]
+
+        if list(
+            filter(lambda k: k.type != first_key.type, remaining_keys)
+        ) == []:
+            type.key = first_key.type
+
+        first_val = self.vals[0]
+        remaining_vals = self.vals[1:]
+
+        if list(
+            filter(lambda v: v.type != first_val.type, remaining_vals)
+        ) == []:
+            type.val = first_val.type
+
+        return type
+
+    def repr_keys_and_vals(
+        self,
+        keys: List[Expr],
+        vals: List[Expr]
+    ) -> List[str]:
+        if keys == []:
+            return []
+
+        key = keys[0]
+        val = vals[0]
+
+        return [f"{key}: {val}"] + self.repr_keys_and_vals(
+            keys[1:],
+            vals[1:]
+        )
+
+    def __repr__(self) -> str:
+        if self.keys == []:
+            return "[:]"
+
+        keys_and_vals = self.repr_keys_and_vals(self.keys, self.vals)
+
+        return "".join([
+            "[",
+            ", ".join(keys_and_vals),
+            "]"
+        ])
 
 class Int(Expr):
     def __init__(self, value: int, loc: Loc):

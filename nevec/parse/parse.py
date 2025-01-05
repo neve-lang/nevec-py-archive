@@ -390,6 +390,9 @@ class Parse:
             case TokType.LPAREN:
                 return self.grouping()
 
+            case TokType.LBRACKET:
+                return self.list_or_table()
+
             case TokType.STR:
                 return self.str_lit()
             
@@ -461,3 +464,56 @@ class Parse:
 
         loc = left_paren.union_hull(loc_end)
         return Parens(grouped, loc)
+
+    def list_or_table(self) -> Expr:
+        left_bracket = self.consume().loc
+
+        if self.match(TokType.COL):
+            return self.empty_table(left_bracket)
+
+        first_expr = self.expr()
+
+        if self.match(TokType.COL):
+            return self.table(left_bracket, first_expr)
+
+        raise NotImplementedError("lists not implemented yet")
+
+    def table(self, left_bracket: Loc, first_key: Expr) -> Table:
+        first_val = self.expr()
+
+        keys = [first_key]
+        vals = [first_val]
+
+        while self.match(TokType.COMMA):
+            key = self.expr()
+            keys.append(key)
+
+            self.consume_expect(TokType.COL)
+
+            val = self.expr()
+            vals.append(val)
+
+        right_bracket = self.consume_expect(TokType.RBRACKET)
+
+        loc_end = (
+            right_bracket.loc 
+            if right_bracket is not None 
+            else self.prev.loc
+        )
+
+        loc = left_bracket.union_hull(loc_end)
+
+        return Table(keys, vals, loc)
+    
+    def empty_table(self, left_bracket: Loc) -> Table:
+        right_bracket = self.consume_expect(TokType.RBRACKET)
+        
+        loc_end = (
+            right_bracket.loc 
+            if right_bracket is not None 
+            else self.prev.loc
+        )
+
+        loc = left_bracket.union_hull(loc_end)
+
+        return Table.empty(loc)
