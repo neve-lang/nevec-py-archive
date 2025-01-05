@@ -29,7 +29,6 @@ The next feature on the horizon for the Neve compiler is **Tables (hash tables)*
 
 ## How to compile a Neve program
 
-[!CAUTION]
 > The Neve compiler only compiles simple expressions as of now.
 
 To compile a Neve program, you can simply run:
