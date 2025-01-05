@@ -72,7 +72,9 @@ class TableType(Type):
         self.val: Type = val
 
         self.name = f"[{self.key}: {self.val}]"
-    
+
+    def is_poisoned(self) -> bool:
+        return self.key.is_poisoned() or self.val.is_poisoned()
 
 class Types:
     UNKNOWN = Type(TypeKind.UNKNOWN, "Unknown")

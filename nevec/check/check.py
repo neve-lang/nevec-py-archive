@@ -43,6 +43,8 @@ class Check(Visit[Ast, bool]):
             if expr.type == Types.BOOL:
                 return False
 
+            un_op.type.poison()
+
             return self.fail(TypeErr(
                 "can only flip booleans",
                 un_op.loc,
@@ -57,9 +59,11 @@ class Check(Visit[Ast, bool]):
         had_err = False
 
         if self.visit(bitwise.left):
+            bitwise.type.poison()
             return True
 
         if self.visit(bitwise.right):
+            bitwise.type.poison()
             return True 
 
         if bitwise.type.is_ignorable():
@@ -96,9 +100,11 @@ class Check(Visit[Ast, bool]):
 
     def visit_Comparison(self, comparison: Comparison):
         if self.visit(comparison.left):
+            comparison.type.poison()
             return True
 
         if self.visit(comparison.right):
+            comparison.type.poison()
             return True
 
         if comparison.type.is_ignorable():
@@ -118,9 +124,11 @@ class Check(Visit[Ast, bool]):
         had_err = False
 
         if self.visit(arith.left):
+            arith.type.poison()
             return True
 
         if self.visit(arith.right):
+            arith.type.poison()
             return True
 
         if arith.type.is_ignorable():
@@ -158,9 +166,11 @@ class Check(Visit[Ast, bool]):
 
     def visit_Concat(self, concat: Concat) -> bool:
         if self.visit(concat.left):
+            concat.type.poison()
             return True
     
         if self.visit(concat.right):
+            concat.type.poison()
             return True
 
         if concat.type.is_ignorable():
@@ -230,6 +240,77 @@ class Check(Visit[Ast, bool]):
                 ))
 
         return False
+
+    def visit_Table(self, table: Table) -> bool:
+        had_err = False
+
+        if list(
+            filter(lambda k: self.visit(k), table.keys)
+        ) != []:
+            return True
+
+        if list(
+            filter(lambda v: self.visit(v), table.vals)
+        ) != []:
+            return True
+
+        if (
+            table.type.key.is_ignorable() or
+            table.type.val.is_ignorable()
+        ):
+            return True
+
+        if table.type.is_poisoned():
+            if table.keys == []:
+                return self.fail(TypeErr(
+                    "could not infer table's type",
+                    table.loc,
+                    table
+                ))
+
+            not_ok_keys = list(filter(
+                lambda k: not table.matches_first_key(k.type),
+                table.keys
+            ))
+
+            not_ok_vals = list(filter(
+                lambda v: not table.matches_first_val(v.type),
+                table.vals
+            ))
+
+            if table.type.key.is_poisoned():
+                first_key = table.keys[0]
+
+                had_err = self.fail(TypeErr(
+                    "these table keys don't match the first key's type",
+                    table.loc,
+                    *not_ok_keys
+                ).add(
+                    Note(
+                        NoteType.HARMLESS,
+                        first_key.loc,
+                        f"first key: {first_key.type}"
+                    ), 
+                    on_line=first_key.loc.line
+                ))
+
+            if table.type.val.is_poisoned():
+                first_val = table.vals[0]
+
+                had_err = self.fail(TypeErr(
+                    "these table values don't match the first values's type",
+                    table.loc,
+                    *not_ok_vals
+                ).add(
+                    Note(
+                        NoteType.HARMLESS,
+                        first_val.loc,
+                        f"first value: {first_val.type}"
+                    ), 
+                    on_line=first_val.loc.line
+                ))
+
+        return had_err
 
     def visit_Int(self, i: Int) -> bool:
         _ = i

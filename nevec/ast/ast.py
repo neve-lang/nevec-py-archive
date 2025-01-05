@@ -190,7 +190,7 @@ class Table(Expr):
         self.vals: List[Expr] = vals
         self.loc: Loc = loc
 
-        self.type: Type = self.infer_type()
+        self.type: TableType = self.infer_type()
 
     @staticmethod
     def empty(loc: Loc) -> "Table":
@@ -200,7 +200,17 @@ class Table(Expr):
             loc
         )
 
-    def infer_type(self) -> Type:
+    def matches_first_key(self, key: Type) -> bool:
+        first_key = self.keys[0].type
+
+        return key == first_key
+
+    def matches_first_val(self, val: Type) -> bool:
+        first_val = self.vals[0].type
+
+        return val == first_val
+
+    def infer_type(self) -> TableType:
         type = TableType(Types.UNKNOWN, Types.UNKNOWN)
 
         if (
