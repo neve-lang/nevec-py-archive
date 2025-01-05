@@ -1,5 +1,5 @@
-from ast.type import Type, Types
-from lex.tok import Tok, TokType, Loc
+from nevec.ast.type import Type, Types
+from nevec.lex.tok import Tok, TokType, Loc
 
 from enum import auto, Enum
 

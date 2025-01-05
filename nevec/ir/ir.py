@@ -2,14 +2,14 @@ from typing import List
 
 from enum import auto, Enum
 
-from ast.ast import *
-from ast.type import Type, Types
+from nevec.ast.ast import *
+from nevec.ast.type import Type, Types
 
-from ir.sym import *
+from nevec.ir.sym import *
 
-from opcode.opcode import Opcode
+from nevec.opcode.opcode import Opcode
 
-from lex.tok import Loc
+from nevec.lex.tok import Loc
 
 
 type Ir = IExpr | IOp | Tac

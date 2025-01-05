@@ -1,11 +1,11 @@
 from typing import Tuple
 
-from ast.ast import *
-from ast.visit import Visit
+from nevec.ast.ast import *
+from nevec.ast.visit import Visit
 
-from ir.ir import *
-from ir.reg import *
-from ir.val import Val
+from nevec.ir.ir import *
+from nevec.ir.reg import *
+from nevec.ir.val import Val
 
 class ToIr(Visit[Ast, Tac]):
     DIGITS = "1234567890"

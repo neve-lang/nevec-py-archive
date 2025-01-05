@@ -1,6 +1,6 @@
 from typing import List
 
-from opcode.instr import Instr
+from nevec.opcode.instr import Instr
 
 class Peephole:
     def __init__(self):

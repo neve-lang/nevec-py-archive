@@ -1,6 +1,6 @@
-from ir.ir import *
+from nevec.ir.ir import *
 
-from ast.visit import Visit
+from nevec.ast.visit import Visit
 
 class Pass(Visit[Ir, None]):
     def __init__(self, syms: Syms):

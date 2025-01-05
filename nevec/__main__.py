@@ -1,11 +1,11 @@
 import sys
 
-from check.check import Check
-from parse.parse import Parse
-from ir.toir import ToIr
-from ir.reg import InterferenceGraph
-from compile.compile import Compile
-from opt.opt import Opt
+from nevec.check.check import Check
+from nevec.parse.parse import Parse
+from nevec.ir.toir import ToIr
+from nevec.ir.reg import InterferenceGraph
+from nevec.compile.compile import Compile
+from nevec.opt.opt import Opt
 
 if __name__ == "__main__":
     args = sys.argv

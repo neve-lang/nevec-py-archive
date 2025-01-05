@@ -1,11 +1,11 @@
 from typing import Callable, Optional
 
-from err.err import Err, Note, NoteType, Line, Suggestion
-from err.report import Report
-from lex.lex import Lex
-from lex.tok import Loc, Tok, TokType, TokTypes
+from nevec.err.err import Err, Note, NoteType, Line, Suggestion
+from nevec.err.report import Report
+from nevec.lex.lex import Lex
+from nevec.lex.tok import Loc, Tok, TokType, TokTypes
 
-from ast.ast import *
+from nevec.ast.ast import *
 
 class ParseErr:
     @staticmethod
@@ -350,8 +350,6 @@ class Parse:
 
             return self.str_concat(callee)
 
-        print(callee)
-        print(self.curr)
         raise NotImplementedError("function calls not implemented yet")
 
     def str_concat(self, left: Expr) -> Expr:

@@ -1,7 +1,7 @@
 from typing import List
 
-from opcode.opcode import *
-from opcode.emit import Emit
+from nevec.opcode.opcode import *
+from nevec.opcode.emit import Emit
 
 class Instr:
     def __init__(self, opcode: Opcode, *operands: int):

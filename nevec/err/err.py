@@ -3,8 +3,8 @@ from sys import stderr
 from enum import Enum, auto
 from typing import Dict, List, Optional, Self, Tuple
 
-from err.color import Color
-from lex.tok import Loc
+from nevec.err.color import Color
+from nevec.lex.tok import Loc
 
 def join(*parts: str) -> str:
     return "".join(parts)

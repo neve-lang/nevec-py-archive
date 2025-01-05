@@ -2,8 +2,8 @@ import string
 
 from typing import List, Optional
 
-from err.report import Report
-from lex.tok import Loc, TokType, Tok
+from nevec.err.report import Report
+from nevec.lex.tok import Loc, TokType, Tok
 
 class CharQueue:
     def __init__(self, chars: str):

@@ -1,5 +1,5 @@
-from ir.ir import *
-from opt.passes import Pass
+from nevec.ir.ir import *
+from nevec.opt.passes import Pass
 
 # NOTE: all this will change once we implement ideas
 class ConstFold(Pass):

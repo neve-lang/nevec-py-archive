@@ -1,7 +1,7 @@
-from ir.ir import *
+from nevec.ir.ir import *
 
-from opt.passes import Pass
-from opt.const import ConstFold
+from nevec.opt.passes import Pass
+from nevec.opt.const import ConstFold
 
 class Opt:
     PASSES: List[type[Pass]] = [

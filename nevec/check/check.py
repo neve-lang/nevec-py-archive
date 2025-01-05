@@ -1,9 +1,9 @@
-from ast.ast import *
-from ast.visit import Visit
+from nevec.ast.ast import *
+from nevec.ast.visit import Visit
 
-from check.errs import *
+from nevec.check.errs import *
 
-from err.err import Err
+from nevec.err.err import Err
 
 class Check(Visit[Ast, bool]):
     def __init__(self):

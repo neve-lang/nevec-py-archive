@@ -2,8 +2,8 @@ import os
 
 from typing import List
 
-from err.err import Err
-from lex.tok import Loc
+from nevec.err.err import Err
+from nevec.lex.tok import Loc
 
 class Report:
     file_name: str

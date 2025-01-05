@@ -2,7 +2,7 @@ from typing import Dict, Self, List, Optional, Tuple
 
 from enum import auto, Enum
 
-from ir.sym import Sym
+from nevec.ir.sym import Sym
 
 class Vertex:
     def __init__(self, name: str, value: int):

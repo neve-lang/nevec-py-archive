@@ -1,6 +1,6 @@
 from enum import auto, Enum
 
-from opcode.emit import Emit
+from nevec.opcode.emit import Emit
 
 class Opcode(Enum):
     CONST = auto()

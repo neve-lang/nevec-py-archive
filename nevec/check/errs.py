@@ -1,11 +1,11 @@
 from typing import override, List
 
-from ast.ast import Expr
+from nevec.ast.ast import Expr
 
-from err.err import *
-from err.report import Report
+from nevec.err.err import *
+from nevec.err.report import Report
 
-from lex.tok import Loc
+from nevec.lex.tok import Loc
 
 
 class TypeErr(Err):

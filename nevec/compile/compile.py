@@ -1,16 +1,16 @@
 from typing import BinaryIO, List, Any, Dict
 
-from compile.peephole import Peephole
-from ast.visit import Visit
+from nevec.compile.peephole import Peephole
+from nevec.ast.visit import Visit
 
-from opcode.const import *
-from opcode.instr import Instr
-from opcode.emit import Emit
+from nevec.opcode.const import *
+from nevec.opcode.instr import Instr
+from nevec.opcode.emit import Emit
 
-from ir.ir import *
-from ir.reg import *
+from nevec.ir.ir import *
+from nevec.ir.reg import *
 
-from err.report import Report
+from nevec.err.report import Report
 
 class Compile(Visit[Ir, None]):
     NEVE_MAGIC_NUMBER = 0xbadbed00
