@@ -283,7 +283,7 @@ class Check(Visit[Ast, bool]):
 
                 had_err = self.fail(TypeErr(
                     "these table keys don't match the first key's type",
-                    table.loc,
+                    first_key.loc,
                     *not_ok_keys
                 ).add(
                     Note(
@@ -299,7 +299,7 @@ class Check(Visit[Ast, bool]):
 
                 had_err = self.fail(TypeErr(
                     "these table values don't match the first value's type",
-                    table.loc,
+                    first_val.loc,
                     *not_ok_vals
                 ).add(
                     Note(
