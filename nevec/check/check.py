@@ -298,7 +298,7 @@ class Check(Visit[Ast, bool]):
                 first_val = table.vals[0]
 
                 had_err = self.fail(TypeErr(
-                    "these table values don't match the first values's type",
+                    "these table values don't match the first value's type",
                     table.loc,
                     *not_ok_vals
                 ).add(
