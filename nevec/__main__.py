@@ -39,11 +39,12 @@ if __name__ == "__main__":
         print("unoptimized:")
         print("\n".join(map(str, ir)))
 
-        opt_ir = Opt(syms).optimize(ir)
-        print("optimized:")
-        print("\n".join(map(str, opt_ir)))
+        # opt_ir = Opt(syms).optimize(ir)
+        # print("optimized:")
+        # print("\n".join(map(str, opt_ir)))
+        opt_ir = ir
 
-        graph = InterferenceGraph(syms.values())
+        graph = InterferenceGraph(syms.values(), debug=True)
 
     output_file = filename.removesuffix(".neve") + ".geada"
 

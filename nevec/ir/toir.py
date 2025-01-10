@@ -44,7 +44,7 @@ class ToIr(Visit[Ast, Tac]):
             expr.loc
         )
 
-        expr.sym.last_used(expr.next_moment())
+        expr.sym.last_used(self.next_moment())
 
         tac = Tac(
             ret.sym,
@@ -223,6 +223,54 @@ class ToIr(Visit[Ast, Tac]):
         )
 
         self.ops.append(tac)
+        return tac
+
+    def visit_Table(self, table: Table) -> Tac:
+        table_size = len(table.keys)
+
+        expr = NewTable(
+            table_size,
+            table.loc,
+            table.type
+        )
+
+        tac = Tac(self.new_sym(), expr, expr.loc)
+        self.ops.append(tac)
+
+        keys = [self.visit(k) for k in table.keys]
+        vals = [self.visit(v) for v in table.vals]
+
+        exprs = list(map(
+            lambda i: TableSet(
+                tac,
+                keys[i],
+                vals[i],
+                table.type,
+                table.loc
+            ),
+            range(len(table.keys)) 
+        ))
+
+        tacs = [
+            Tac(e.key.sym, e, e.loc)
+            for e in exprs
+        ]
+
+        list(map(self.ops.append, tacs)) 
+
+        moment = self.next_moment()
+
+        # i'm truly sorry about all this
+        list(map(
+            lambda i: keys[i].sym.last_used(moment - len(keys) + i), 
+            range(len(keys))
+        ))
+
+        list(map(
+            lambda i: vals[i].sym.last_used(moment - len(keys) + i), 
+            range(len(vals))
+        ))
+
         return tac
 
     def visit_Int(self, i: Int) -> Tac:

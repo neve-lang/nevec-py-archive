@@ -58,8 +58,6 @@ class Compile(Visit[Ir, None]):
         list(map(lambda b: to.write(b), byte_list))
 
     def finalize(self):
-        last_line = self.debug_header_bytes[-1]
-
         debug_header_length = Emit.encode_int(self.debug_header_length, 2)
 
         self.debug_header_bytes = [
@@ -168,6 +166,19 @@ class Compile(Visit[Ir, None]):
         )
 
         self.emit(instr, bin_op.loc.line)
+
+    def visit_NewTable(self, new_table: NewTable, dest_reg: int):
+        instr = Instr(Opcode.TABLE_NEW, dest_reg)
+
+        self.emit(instr, new_table.loc.line)
+
+    def visit_TableSet(self, table_set: TableSet, dest_reg: int):
+        table = self.reg_of(table_set.table.sym)
+        val = self.reg_of(table_set.expr.sym)
+
+        instr = Instr(Opcode.TABLE_SET, table, dest_reg, val)
+
+        self.emit(instr, table_set.loc.line);
 
     def visit_IInt(self, i: IInt, dest_reg: int):
         line = i.loc.line

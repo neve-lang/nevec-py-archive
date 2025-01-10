@@ -32,6 +32,12 @@ class IExpr:
         self.loc: Loc = loc
 
 
+class SetIExpr(IExpr):
+    def __init__(self, type: Type, loc: Loc):
+        self.type: Type = type
+        self.loc: Loc = loc
+
+
 class Tac:
     def __init__(
         self,
@@ -51,10 +57,10 @@ class Tac:
         return self.moment + 1
     
     def __repr__(self) -> str:
-        if isinstance(self.expr, IOp):
+        if isinstance(self.expr, IOp | SetIExpr):
             return str(self.expr)
 
-        return f"{self.sym.full_name} = {self.expr}" 
+        return f"{self.sym} = {self.expr}" 
 
 
 class IUnOp(IExpr):
@@ -152,6 +158,56 @@ class IBinOp(IExpr):
             return f"{self.left.sym} {self.right.sym}"
 
         return f"{self.left.sym} {self.op_lexeme} {self.right.sym}"
+
+
+class TableSet(SetIExpr):
+    def __init__(
+        self,
+        table: Tac,
+        key: Tac,
+        expr: Tac,
+        type: Type,
+        loc: Loc
+    ):
+        self.table: Tac = table
+        self.key: Tac = key
+
+        self.expr: Tac = expr
+
+        self.type: Type = type
+        self.loc: Loc = loc
+
+    def __repr__(self) -> str:
+        return f"{self.table.sym}[{self.key.sym}] = {self.expr.sym}"
+
+
+class TableGet(IExpr):
+    def __init__(
+        self,
+        table: Tac,
+        key: Tac,
+        loc: Loc,
+        type: Type
+    ):
+        self.table: Tac = table
+
+        self.key: Tac = key
+
+        self.loc: Loc = loc
+        self.type: Type = type
+
+    def __repr__(self) -> str:
+        return f"{self.table.sym}[{self.key.sym}]"
+
+
+class NewTable(IExpr):
+    def __init__(self, size: int, loc: Loc, type: Type):
+        self.size: int = max(size, 8)
+        self.loc: Loc = loc
+        self.type: Type = type
+
+    def __repr__(self) -> str:
+        return "tablenew"
 
 
 class IConst[T](IExpr):

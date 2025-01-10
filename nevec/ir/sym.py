@@ -11,8 +11,7 @@ class Lifetime:
         assert self.last is not None and other.last is not None
 
         return (
-            (self.first >= other.first and self.last <= other.last) or
-            (other.first >= self.first and other.last <= self.last)
+            other.first < self.last and other.last > self.first
         )
     
     def is_valid_in(self, moment: Moment) -> bool:
