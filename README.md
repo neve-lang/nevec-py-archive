@@ -5,7 +5,7 @@ Neve is a modern, hybrid-paradigm programming language designed to deliver relia
 ## Example
 
 ```rb
-idea Nat = Int | self >= 0
+idea Nat = Int where self >= 0
 
 fun fib(n Nat)
   match n
@@ -25,7 +25,7 @@ end
 
 ## What's Next
 
-The next feature on the horizon for the Neve compiler is **Tables (hash tables)**.
+The next feature on the horizon for the Neve compiler is **UTF-16** and **UTF-32 strings**, along with support for UTF-8 ones.
 
 ## How to compile a Neve program
 

@@ -265,6 +265,7 @@ class Table(Expr):
             "]"
         ])
 
+
 class Int(Expr):
     def __init__(self, value: int, loc: Loc):
         self.value = value
@@ -331,6 +332,7 @@ class Str(Expr):
     def __repr__(self):
         return f"\"{self.value}\""
 
+
 class Interpol(Expr):
     def __init__(self, left: str, expr: Expr, next: Self | Str, loc: Loc):
         self.left = left
@@ -355,6 +357,7 @@ class Interpol(Expr):
                 "\""
             ]
         )
+
 
 class Nil(Expr):
     def __init__(self, loc: Loc):
