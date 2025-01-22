@@ -39,6 +39,10 @@ class Opcode(Enum):
 
     CONCAT = auto()
 
+    TABLE_NEW = auto()
+    TABLE_SET = auto()
+    TABLE_GET = auto()
+
     RET = auto()
     
     def raw(self) -> int:

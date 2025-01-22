@@ -93,6 +93,7 @@ class Loc:
 
 class TokType(Enum):
     SEMICOL = auto()
+    COL = auto()
     COMMA = auto()
     DOT = auto()
     DOT_DOT = auto()
@@ -182,7 +183,7 @@ class TokType(Enum):
 class TokTypes:
     KEYWORDS = {
         "and": TokType.AND,
-        "bitor": TokType.BIT_OR,
+        "bor": TokType.BIT_OR,
         "class": TokType.CLASS,
         "do": TokType.DO,
         "else": TokType.ELSE,
@@ -209,6 +210,7 @@ class TokTypes:
 
     TOKS = {
         ";": TokType.SEMICOL,
+        ":": TokType.COL,
         ",": TokType.COMMA,
         ".": TokType.DOT,
         "..": TokType.DOT_DOT,

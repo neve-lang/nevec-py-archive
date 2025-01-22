@@ -35,13 +35,24 @@ class Vertex:
         return f"{self.name} r{self.reg}"
 
 class InterferenceGraph:
-    def __init__(self, syms: List[Sym]):
+    def __init__(self, syms: List[Sym], debug=False):
         self.regs: Dict[str, Vertex] = {}
 
+        # print(list(filter(lambda s: s.lifetime is None, syms)))
         assert list(filter(lambda s: s.lifetime is None, syms)) == []
 
         self.draw_edges(based_on=syms)
         self.assign_registers()
+
+        if debug:
+            print(" ".join(
+                [
+                    f"{s} {s.lifetime}"
+                    for s in syms
+                ]
+            ))
+
+            print(self.regs)
 
     def draw_edges(self, based_on: List[Sym]):
         def check(syms: List[Tuple[int, Sym]]):

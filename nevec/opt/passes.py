@@ -8,7 +8,7 @@ class Pass(Visit[Ir, None]):
 
         self.syms: Syms = syms
 
-        self.elims: int = 0
+        self.new_indices: Dict[int, int] = {}
 
     def optimize(self, ir: List[Tac]) -> List[Tac]:
         if ir == []:
@@ -22,22 +22,40 @@ class Pass(Visit[Ir, None]):
     def emit(self, *tac: Tac):
         self.opts.extend(tac)
 
-    def elim_if_dead(self, sym: Sym, lend_name_to: Sym):
+    def find_new_index(self, sym: Sym) -> Optional[int]:
+        return next(
+            (
+                i 
+                for i, o in enumerate(self.opts)
+                if o.sym.full_name == sym.full_name
+            ),
+            None 
+        )
+
+    def elim_if_dead(self, sym: Sym, lend_name_to: Optional[Sym]=None):
         if sym.uses > 0:
             return
 
-        index = max(0, sym.first - self.elims)
+        lend_name_to = (
+            lend_name_to 
+            if lend_name_to is not None
+            else self.syms.next_after(sym)
+        )
 
-        if len(self.opts) <= index:
-            raise ValueError("attempt to eliminate symbol that does not exist")
+        index = self.find_new_index(sym)
+
+        if index is None:
+            raise ValueError(
+                "attempt to eliminate symbol that does not exist: "
+                f"{sym.full_name}"
+            )
 
         del self.opts[index]
-        
-        lend_name_to.rename(after=sym)
+
+        if lend_name_to is not None:
+            lend_name_to.rename(after=sym)
 
         del sym
-
-        self.elims += 1
 
     def visit(self, node: Ir, *ctx: Tac):
         method_name = "visit_" + type(node).__name__
@@ -52,3 +70,10 @@ class Pass(Visit[Ir, None]):
 
     def visit_Tac(self, tac: Tac):
         self.visit(tac.expr, tac)
+
+    def is_propagatable(self, tac: Tac) -> bool:
+        return (
+            isinstance(tac.expr, IConst) and
+            tac.sym.uses <= 1 
+        )
+

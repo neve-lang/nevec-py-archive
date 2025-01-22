@@ -31,9 +31,12 @@ class TypeErr(Err):
         found = list(filter(lambda l: l.line == on_line, lines))
 
         if found == []:
-            raise ValueError(
-                f"instance of TypeErr does not display line #{on_line}"
-            )
+            line = Line(Loc(1, on_line, 1))
+            line.add(note)
+
+            self.err.lines.append(line) 
+            return self
+
 
         line = found[0]
         line.add(note)

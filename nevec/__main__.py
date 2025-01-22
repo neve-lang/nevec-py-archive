@@ -23,12 +23,12 @@ if __name__ == "__main__":
 
         ast = parse.parse()
 
+        print(ast)
+
         had_err = Check().visit(ast)
 
         if had_err:
             exit(1)
-
-        print(ast)
 
         toir = ToIr()
 
@@ -43,7 +43,7 @@ if __name__ == "__main__":
         print("optimized:")
         print("\n".join(map(str, opt_ir)))
 
-        graph = InterferenceGraph(syms.values())
+        graph = InterferenceGraph(syms.values(), debug=False)
 
     output_file = filename.removesuffix(".neve") + ".geada"
 

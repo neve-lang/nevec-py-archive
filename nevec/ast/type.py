@@ -13,6 +13,8 @@ class TypeKind(Enum):
     STR16 = auto()
     STR32 = auto()
 
+    TABLE = auto()
+
 
 @dataclass
 class Type:
@@ -61,6 +63,18 @@ class Type:
     def __repr__(self) -> str:
         return self.name
 
+
+class TableType(Type):
+    def __init__(self, key: Type, val: Type):
+        self.kind: TypeKind = TypeKind.TABLE
+
+        self.key: Type = key
+        self.val: Type = val
+
+        self.name = f"[{self.key}: {self.val}]"
+
+    def is_poisoned(self) -> bool:
+        return self.key.is_poisoned() or self.val.is_poisoned()
 
 class Types:
     UNKNOWN = Type(TypeKind.UNKNOWN, "Unknown")
