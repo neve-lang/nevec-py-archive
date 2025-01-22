@@ -92,6 +92,13 @@ class Syms:
 
         return self.next_available_name(name, index + 1)
 
+    def next_after(self, sym: Sym) -> Optional[Sym]:
+        index = sym.index + 1
+
+        next_name = f"{sym.name}{index}"
+
+        return self.syms.get(next_name)
+
     def cleanup(self):
         self.syms = {n: s for n, s in self.syms.items() if s.uses > 0}
 

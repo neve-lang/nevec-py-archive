@@ -26,12 +26,11 @@ class Compile(Visit[Ir, None]):
 
         self.peephole: Peephole = Peephole()
 
-        self.next_const_index: int = 0
         self.next_instr_offset: int = 0
 
         self.debug_header_length: int = 1
 
-        self.const_ids: Dict[Any, int] = {}
+        self.consts: List[Const] = []
         self.const_indices: Dict[int, int] = {}
 
         self.emit_first_bytes()
@@ -74,19 +73,25 @@ class Compile(Visit[Ir, None]):
     def reg_of(self, sym: Sym) -> int:
         return self.graph.get_reg(sym)
 
-    def make_const[T](self, const_type: type[Const], value: T) -> Const:
-        if value in self.const_ids:
-            id = self.const_ids[value]
-            return const_type(value, id)
+    def get_const(self, const: Const) -> Optional[Const]:
+        return next(
+            (c for c in self.consts if c == const),
+            None
+        )
 
-        next_id = len(self.const_ids)
+    def make_const[T](self, const_type: type[Const], value: T) -> Const:
+        next_id = len(self.consts)
         const = const_type(value, next_id)
 
-        self.const_ids[value] = next_id
-         
-        self.const_indices[const.id] = self.next_const_index
-        self.next_const_index += 1 
+        existing_const = self.get_const(const)
 
+        if existing_const is not None:
+            return existing_const
+
+        self.consts.append(const)
+
+        self.const_indices[const.id] = next_id
+         
         const_bytes = const.emit()
         self.const_header_bytes.extend(const_bytes)
 
@@ -167,11 +172,6 @@ class Compile(Visit[Ir, None]):
 
         self.emit(instr, bin_op.loc.line)
 
-    def visit_NewTable(self, new_table: NewTable, dest_reg: int):
-        instr = Instr(Opcode.TABLE_NEW, dest_reg)
-
-        self.emit(instr, new_table.loc.line)
-
     def visit_TableSet(self, table_set: TableSet, dest_reg: int):
         table = self.reg_of(table_set.table.sym)
         val = self.reg_of(table_set.expr.sym)
@@ -212,6 +212,21 @@ class Compile(Visit[Ir, None]):
 
     def visit_IStr(self, s: IStr, dest_reg: int):
         self.emit_const(StrLit, s.value, dest_reg, s.loc.line)
+
+    def visit_ITable(self, table: ITable, dest_reg: int):
+        if table.keys == []:
+            instr = Instr(Opcode.TABLE_NEW, dest_reg)
+            self.emit(instr, table.loc.line)
+
+            return
+
+        keys = [k.const() for k in table.keys]
+        vals = [v.const() for v in table.vals]
+        
+        entries = TableLit.make_entries(keys, vals)
+
+        self.emit_const(TableLit, entries, dest_reg, table.loc.line)
+        
 
     def visit_INil(self, nil: INil, dest_reg: int):
         self.emit(Instr(Opcode.NIL, dest_reg), nil.loc.line)

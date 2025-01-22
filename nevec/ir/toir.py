@@ -226,13 +226,7 @@ class ToIr(Visit[Ast, Tac]):
         return tac
 
     def visit_Table(self, table: Table) -> Tac:
-        table_size = len(table.keys)
-
-        expr = NewTable(
-            table_size,
-            table.loc,
-            table.type
-        )
+        expr = ITable.empty(table.loc, table.type)
 
         tac = Tac(self.new_sym(), expr, expr.loc)
         self.ops.append(tac)
@@ -270,6 +264,8 @@ class ToIr(Visit[Ast, Tac]):
             lambda i: vals[i].sym.last_used(moment - len(keys) + i), 
             range(len(vals))
         ))
+
+        tac.sym.uses += len(keys)
 
         return tac
 

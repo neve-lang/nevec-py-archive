@@ -2,9 +2,11 @@ from nevec.ir.ir import *
 
 from nevec.opt.passes import Pass
 from nevec.opt.const import ConstFold
+from nevec.opt.table import TablePropagation
 
 class Opt:
     PASSES: List[type[Pass]] = [
+        TablePropagation,
         ConstFold
     ]
 

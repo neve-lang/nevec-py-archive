@@ -6,20 +6,20 @@ class ConstFold(Pass):
     def visit_IBinOp(self, bin_op: IBinOp, ctx: Tac):
         dest_sym = ctx.sym
 
-        left = bin_op.left.expr
-        right = bin_op.right.expr
+        left = bin_op.left
+        right = bin_op.right
 
-        assert isinstance(left, IExpr) and isinstance(right, IExpr)
+        assert isinstance(left.expr, IExpr) and isinstance(right.expr, IExpr)
 
-        if not self.is_foldable(left) or not self.is_foldable(right):
+        if not self.is_propagatable(left) or not self.is_propagatable(right):
             self.emit(ctx)
             return
 
         opt = self.fold_bin_op(bin_op, ctx)
         ctx.expr = opt.expr
         
-        left_sym = bin_op.left.sym
-        right_sym = bin_op.right.sym
+        left_sym = left.sym
+        right_sym = right.sym
 
         self.emit(opt)
 
@@ -29,18 +29,18 @@ class ConstFold(Pass):
     def visit_IUnOp(self, un_op: IUnOp, ctx: Tac):
         dest_sym = ctx.sym
 
-        operand = un_op.operand.expr
+        operand = un_op.operand
 
-        assert isinstance(operand, IExpr)
+        assert isinstance(operand.expr, IExpr)
 
-        if not self.is_foldable(operand):
+        if not self.is_propagatable(operand):
             self.emit(ctx)
             return
 
         opt = self.fold_un_op(un_op, ctx)
         ctx.expr = opt.expr
 
-        operand_sym = un_op.operand.sym
+        operand_sym = operand.sym
 
         self.emit(opt)
 
@@ -127,9 +127,9 @@ class ConstFold(Pass):
         operand_sym = un_op.operand.sym
         operand_sym.propagate()
 
-        # again, i'm so sorry
+        # TODO: replace all this with an inline `.show`
         result = None
-        
+
         match operand.type:
             case Types.INT | Types.FLOAT:
                 result = "{:.14g}".format(operand.value)
@@ -137,8 +137,11 @@ class ConstFold(Pass):
             case Types.BOOL:
                 result = str(operand.value).lower()
 
-            case _:
+            case Types.STR | Types.STR16 | Types.STR32:
                 result = operand.value
+
+            case _:
+                result = repr(operand)
 
         expr = IStr(
             result,
@@ -149,10 +152,10 @@ class ConstFold(Pass):
         return Tac(dest_sym, expr, un_op.loc)
 
     def fold_bin_op(self, bin_op: IBinOp, ctx: Tac) -> Tac:
-        left = bin_op.left.expr
-        right = bin_op.right.expr
+        left = bin_op.left
+        right = bin_op.right
 
-        assert self.is_foldable(left) and self.is_foldable(right)
+        assert self.is_propagatable(left) and self.is_propagatable(right)
 
         match bin_op.type:
             case Types.INT | Types.FLOAT:
@@ -273,5 +276,3 @@ class ConstFold(Pass):
         left_sym.propagate()
         right_sym.propagate()
 
-    def is_foldable(self, expr: IExpr | IOp) -> bool:
-        return isinstance(expr, IConst)
