@@ -271,16 +271,20 @@ class IStr(IConst):
     def __init__(
         self,
         value: str,
+        is_interned: bool,
         loc: Loc,
         type: Type,
     ):
         self.value: str = value
+        self.is_interned: bool = is_interned
 
         self.loc: Loc = loc
         self.type: Type = type
 
     def const(self) -> Const:
-        return StrLit(self.value)
+        value = (self.value, self.is_interned)
+
+        return StrLit(value)
 
     def __repr__(self) -> str:
         return f"\"{self.value}\""

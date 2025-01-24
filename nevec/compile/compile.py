@@ -211,7 +211,9 @@ class Compile(Visit[Ir, None]):
         )
 
     def visit_IStr(self, s: IStr, dest_reg: int):
-        self.emit_const(StrLit, s.value, dest_reg, s.loc.line)
+        value = (s.value, s.is_interned)
+
+        self.emit_const(StrLit, value, dest_reg, s.loc.line)
 
     def visit_ITable(self, table: ITable, dest_reg: int):
         if table.keys == []:

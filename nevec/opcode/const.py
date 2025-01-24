@@ -1,6 +1,6 @@
 import struct
 
-from typing import Self, List
+from typing import Self, List, Tuple
 from enum import auto, Enum
 
 class ValType(Enum):
@@ -97,13 +97,17 @@ class Num(Const[float]):
         return str(self.value)
 
 
-class StrLit(Const[str]):
+class StrLit(Const[Tuple[str, bool]]):
     def emit(self) -> List[bytes]:
+        string = self.value[0]
+        is_interned = int(self.value[1])
+
         return [
             self.emit_type(ValType.OBJ),
             self.emit_type(ObjType.STR),
-            self.emit_int(len(self.value), 4),
-            self.value.encode()
+            self.emit_int(len(string), 4),
+            string.encode(),
+            self.emit_int(is_interned, 1) 
         ]
 
     def __eq__(self, other: Const) -> bool:
@@ -113,7 +117,7 @@ class StrLit(Const[str]):
         )
 
     def __repr__(self) -> str:
-        return self.value
+        return self.value[0]
 
 
 class TableLit(Const[List[Const]]):
