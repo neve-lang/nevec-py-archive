@@ -324,7 +324,7 @@ class ToIr(Visit[Ast, Tac]):
 
     def visit_Str(self, s: Str) -> Tac:
         # simple logic for now
-        is_interned = s.type == Types.STR
+        is_interned = s.type == Types.STR or s.type == Types.STR8
 
         expr = IStr(
             s.value,
