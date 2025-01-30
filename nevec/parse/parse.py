@@ -323,7 +323,7 @@ class Parse:
             #   "Hello, "
             #   "world!"
             # )
-            if expr.type == Types.STR and self.check(TokType.STR):
+            if expr.type.is_str() and self.check(TokType.STR):
                 expr = self.str_concat(expr)
                 continue
             
@@ -335,7 +335,7 @@ class Parse:
     def fun_call(self, callee: Expr, parens=False) -> Expr:
         _ = parens
 
-        if callee.type == Types.STR:
+        if callee.type.is_str():
             return self.str_concat(callee)
 
         raise NotImplementedError("function calls not implemented yet")

@@ -1,5 +1,7 @@
 from sys import stderr
 
+import emoji
+
 from enum import Enum, auto
 from typing import Dict, List, Optional, Self, Tuple
 
@@ -267,7 +269,7 @@ class Suggestion:
         self.replace_length: int = self.loc.length
 
         self.loc.length = len(self.fix)
-        self.loc.true_length = len(self.fix)
+        self.loc.true_length = self.get_len(self.fix)
 
     def emit(self, lines: List[str]) -> List[str]:
         source_line = lines[self.line - 1]
@@ -299,6 +301,16 @@ class Suggestion:
             given_line=modified_line, 
             given_line_number=self.line
         )
+
+    def get_len(self, s: Optional[str]=None) -> int:
+        s = s if s is not None else self.fix
+
+        if len(s) == 0:
+            return 0
+
+        char = s[0]
+        return 1 + int(emoji.is_emoji(char)) + self.get_len(s[1:])
+
 
 class Err:
     def __init__(

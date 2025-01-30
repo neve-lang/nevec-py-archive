@@ -184,9 +184,16 @@ class Check(Visit[Ast, bool]):
             # Concat node, it must find a Str node on the left hand side
             culprit = right
 
+            number = "".join(filter(lambda c: c.isnumeric(), culprit.type.name))
+
+            # i'm endlessly sorry for this
+            # i promise i'll work on refactoring everything once we implement
+            # string encodings
             utf_conversion = (
-                ".utf" + culprit.type.name[:-2]
+                ".utf" + number
                 if left.type != Types.STR
+                else ".ascii"
+                if culprit.type != Types.STR
                 else ""
             )
 
@@ -205,9 +212,6 @@ class Check(Visit[Ast, bool]):
                 if not isinstance(culprit, Op)
                 else f"({culprit})" + show_fix
             )
-
-            print(culprit)
-            print(culprit.loc, culprit.loc.true_col, culprit.loc.true_length)
 
             if not culprit.type.is_str():
                 return self.fail(TypeErr(
