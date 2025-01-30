@@ -31,7 +31,13 @@ The next feature on the horizon for the Neve compiler is **UTF-16** and **UTF-32
 
 > The Neve compiler only compiles simple expressions as of now.
 
-To compile a Neve program, you can simply run:
+To compile a Neve program, you must first install the compiler's requirements:
+
+```
+python3.12 -m pip install -r requirements.txt
+```
+
+Once the requirements are installed, you may compile your Neve code using:
 
 ```
 python3.12 -m nevec <file>
