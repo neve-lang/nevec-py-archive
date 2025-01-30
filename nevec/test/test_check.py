@@ -7,7 +7,9 @@ def all_ok(input) -> bool:
     parse = Parse(input)
     ast = parse.parse()
 
-    return Check().visit(ast)
+    print(ast)
+
+    return not Check().visit(ast)
 
 class TestCheck:
     def test_one(self):

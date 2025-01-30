@@ -211,7 +211,7 @@ class Compile(Visit[Ir, None]):
         )
 
     def visit_IStr(self, s: IStr, dest_reg: int):
-        value = (s.value, s.is_interned)
+        value = (s.encoding(), s.value, s.is_interned)
 
         self.emit_const(StrLit, value, dest_reg, s.loc.line)
 

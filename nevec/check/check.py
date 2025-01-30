@@ -218,7 +218,7 @@ class Check(Visit[Ast, bool]):
                         f"converts it to {left.type} (not implemented yet)",
                         loc_to_replace,
                         fix,
-                        insert=not isinstance(culprit, Op)
+                        insert_if=not isinstance(culprit, Op)
                     )
                 ))
             else:
@@ -235,7 +235,7 @@ class Check(Visit[Ast, bool]):
                         f"converts it to {left.type} (not implemented yet)",
                         loc_to_replace,
                         fix,
-                        insert=not isinstance(culprit, Op)
+                        insert_if=not isinstance(culprit, Op)
                     )
                 ))
 

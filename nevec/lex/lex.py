@@ -1,5 +1,7 @@
 import string
 
+import emoji
+
 from typing import List, Optional
 
 from nevec.err.report import Report
@@ -21,7 +23,7 @@ class CharQueue:
         return self.chars.pop()
 
     def peek(self) -> Optional[str]:
-        if self.items_left < 2:
+        if self.items_left < 1:
             return None
 
         return self.chars[-1]
@@ -55,6 +57,12 @@ class Lex:
             self.lexeme.append(self.char)
 
         self.char = self.code.pop() 
+
+        if self.char is not None:
+            char_size = 1 + int(emoji.is_emoji(self.char))
+
+            self.loc.advance(char_size)
+            return
 
         self.loc.advance()
 
@@ -168,13 +176,20 @@ class Lex:
 
         is_float = self.on_float()
 
+        if self.lexeme == ["0"]:
+            print(is_float)
+            print(self.on_float())
+            print(self.char == ".")
+            print(self.is_digit(self.peek()))
+            print(self.peek())
+
         if is_float:
             self.advance()
 
             while self.on_digit():
                 self.advance()
         
-        # still on_float() => something like 1.2.3
+        # still on_float() <=> something like 1.2.3
         if self.on_float():
             # skip the "."
             self.advance()

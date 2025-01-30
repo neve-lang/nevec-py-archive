@@ -282,9 +282,27 @@ class IStr(IConst):
         self.type: Type = type
 
     def const(self) -> Const:
-        value = (self.value, self.is_interned)
+        encoding = self.encoding()
+        value = (encoding, self.value, self.is_interned)
 
         return StrLit(value)
+
+    def encoding(self) -> str:
+        match self.type:
+            case Types.STR:
+                return "ascii"
+
+            case Types.STR8:
+                return "utf8"
+
+            case Types.STR16:
+                return "utf16"
+
+            case Types.STR32:
+                return "utf32"
+            
+            case _:
+                raise ValueError("malformed IR")
 
     def __repr__(self) -> str:
         return f"\"{self.value}\""

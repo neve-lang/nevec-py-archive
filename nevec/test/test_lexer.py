@@ -134,6 +134,8 @@ class TestLex:
         lex = Lex(input)
         toks = all_toks(lex)
 
+        print(list(map(lambda t: t.type, toks)))
+
         assert all_similar(
             toks,
             [
@@ -143,7 +145,9 @@ class TestLex:
                 TokType.INTERPOL,
                 TokType.INTERPOL,
                 TokType.STR,
+                TokType.INTERPOL_SEP,
                 TokType.STR,
+                TokType.INTERPOL_SEP,
                 TokType.STR,
                 TokType.EOF
             ]
@@ -244,3 +248,20 @@ class TestLex:
                 TokType.EOF
             ]
         )
+
+    def test_unicode(self):
+        input = "\"👋 Hello \" \"world!\""
+
+        lex = Lex(input)
+        toks = all_toks(lex)
+
+        second_str = toks[1]
+
+        assert all_similar(
+            toks,
+            [
+                TokType.STR,
+                TokType.STR,
+                TokType.EOF
+            ]
+        ) and second_str.loc.col == 12
