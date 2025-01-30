@@ -206,6 +206,9 @@ class Check(Visit[Ast, bool]):
                 else f"({culprit})" + show_fix
             )
 
+            print(culprit)
+            print(culprit.loc, culprit.loc.true_col, culprit.loc.true_length)
+
             if not culprit.type.is_str():
                 return self.fail(TypeErr(
                     f"cannot concatenate {culprit.type} to a Str type",

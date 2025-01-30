@@ -85,6 +85,8 @@ class Loc:
         self.col = 0
         self.line += 1
 
+        self.true_col = 0
+
     def sync(self):
         self.col += self.length
         self.length = 0
