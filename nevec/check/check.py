@@ -340,7 +340,8 @@ class Check(Visit[Ast, bool]):
         return False
 
     def visit_Interpol(self, interpol: Interpol) -> bool:
-        _ = interpol
+        if self.visit(interpol.expr):
+            return True
 
         # TODO: check if each expression implements Show
         return False

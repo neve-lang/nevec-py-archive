@@ -296,12 +296,11 @@ class IStr(IConst):
     def __init__(
         self,
         value: str,
-        is_interned: bool,
         loc: Loc,
         type: Type,
     ):
         self.value: str = value
-        self.is_interned: bool = is_interned
+        self.is_interned: bool = type == Types.STR or type == Types.STR8
 
         self.loc: Loc = loc
         self.type: Type = type
@@ -344,6 +343,8 @@ class ITable(IConst):
         self.keys = keys
         self.vals = vals
 
+        self.const_keys = [k.const() for k in self.keys]
+
         self.loc = loc
         self.type = type
 
@@ -357,8 +358,23 @@ class ITable(IConst):
         )
 
     def add_entry(self, key: IConst, val: IConst):
+        existing = next(
+            (
+                i
+                for i, k in enumerate(self.keys)
+                if k.const() in self.const_keys
+            ),
+            None
+        )
+
+        if existing is not None:
+            del self.keys[existing] 
+            del self.vals[existing]
+
         self.keys.append(key)
         self.vals.append(val)
+
+        self.const_keys.append(key.const())
 
     def const(self) -> Const:
         keys = [k.const() for k in self.keys]

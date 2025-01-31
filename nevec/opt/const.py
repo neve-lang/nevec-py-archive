@@ -26,6 +26,29 @@ class ConstFold(Pass):
         self.elim_if_dead(left_sym, lend_name_to=dest_sym)
         self.elim_if_dead(right_sym, lend_name_to=dest_sym)
 
+    def visit_IConcat(self, concat: IConcat, ctx: Tac):
+        dest_sym = ctx.sym
+
+        left = concat.left
+        right = concat.right
+
+        assert isinstance(left.expr, IExpr) and isinstance(right.expr, IExpr)
+
+        if not self.is_propagatable(left) or not self.is_propagatable(right):
+            self.emit(ctx)
+            return
+
+        opt = self.fold_concat(concat, ctx)
+        ctx.expr = opt.expr
+
+        left_sym = left.sym
+        right_sym = right.sym
+
+        self.emit(opt)
+
+        self.elim_if_dead(left_sym, lend_name_to=dest_sym)
+        self.elim_if_dead(right_sym, lend_name_to=dest_sym)
+
     def visit_IUnOp(self, un_op: IUnOp, ctx: Tac):
         dest_sym = ctx.sym
 
@@ -164,7 +187,7 @@ class ConstFold(Pass):
             case Types.BOOL:
                 return self.fold_comparison(bin_op, ctx)
 
-            case Types.STR | Types.STR16 | Types.STR32:
+            case Types.STR | Types.STR8 | Types.STR16 | Types.STR32:
                 return self.fold_concat(bin_op, ctx)
 
         raise ValueError("malformed IR")
@@ -242,6 +265,9 @@ class ConstFold(Pass):
 
         left = left_node.value
         right = right_node.value
+
+        left = f"\"{left}\"" if isinstance(left_node, IStr) else left
+        right = f"\"{right}\"" if isinstance(right_node, IStr) else right
         
         # i'm equally sorry about this
         result = eval(f"{left} {bin_op.op_lexeme} {right}")
@@ -250,13 +276,13 @@ class ConstFold(Pass):
 
         return Tac(dest_sym, expr, bin_op.loc)
 
-    def fold_concat(self, bin_op: IBinOp, ctx: Tac) -> Tac:
+    def fold_concat(self, concat: IConcat, ctx: Tac) -> Tac:
         dest_sym = ctx.sym
 
-        self.propagate_operands(bin_op)
+        self.propagate_operands(concat)
 
-        left_node = bin_op.left.expr
-        right_node = bin_op.right.expr
+        left_node = concat.left.expr
+        right_node = concat.right.expr
 
         assert isinstance(left_node, IConst) and isinstance(right_node, IConst)
 
@@ -265,13 +291,13 @@ class ConstFold(Pass):
         
         result = left + right
 
-        expr = IStr(result, bin_op.loc, bin_op.type)
+        expr = IStr(result, concat.loc, concat.type)
 
-        return Tac(dest_sym, expr, bin_op.loc)
+        return Tac(dest_sym, expr, concat.loc)
 
-    def propagate_operands(self, bin_op: IBinOp):
-        left_sym = bin_op.left.sym
-        right_sym = bin_op.right.sym
+    def propagate_operands(self, node: IBinOp | IConcat):
+        left_sym = node.left.sym
+        right_sym = node.right.sym
 
         left_sym.propagate()
         right_sym.propagate()

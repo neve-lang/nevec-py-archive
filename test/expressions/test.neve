@@ -1,1 +1,1 @@
-"My table: #{["hey": 10, "hey": 20]}"
+"My table: #{"hey" == "he" "y"}"
