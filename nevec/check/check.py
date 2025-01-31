@@ -184,7 +184,7 @@ class Check(Visit[Ast, bool]):
             # Concat node, it must find a Str node on the left hand side
             culprit = right
 
-            number = "".join(filter(lambda c: c.isnumeric(), culprit.type.name))
+            number = "".join(filter(lambda c: c.isnumeric(), left.type.name))
 
             # i'm endlessly sorry for this
             # i promise i'll work on refactoring everything once we implement

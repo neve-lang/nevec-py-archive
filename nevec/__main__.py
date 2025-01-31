@@ -15,7 +15,7 @@ def read_options(args: List[str]) -> List[str]:
 if __name__ == "__main__":
     args = sys.argv
 
-    if len(args) <= 2:
+    if len(args) < 2:
         # TODO: replace this with a CLI err
         print("usage: nevec [file]")
         exit(1)
