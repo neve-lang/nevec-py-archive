@@ -175,12 +175,9 @@ class ToIr(Visit[Ast, Tac]):
         left = self.visit(concat.left)
         right = self.visit(concat.right)
 
-        expr = IBinOp(
+        expr = IConcat(
             left,
-            IBinOp.Op(concat.op.value),
             right,
-
-            "concat",
 
             concat.loc,
             concat.type,
@@ -323,12 +320,8 @@ class ToIr(Visit[Ast, Tac]):
         return tac
 
     def visit_Str(self, s: Str) -> Tac:
-        # simple logic for now
-        is_interned = s.type == Types.STR
-
         expr = IStr(
             s.value,
-            is_interned,
             s.loc,
             s.type,
         )

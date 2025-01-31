@@ -20,7 +20,6 @@ class TypeErr(Err):
             )
 
         self.err = self.make_err()
-        self.emit()
 
     @override
     def emit(self) -> str:
@@ -37,14 +36,13 @@ class TypeErr(Err):
             self.err.lines.append(line) 
             return self
 
-
         line = found[0]
         line.add(note)
 
         return self
 
     def suggest(self, suggestion: Suggestion) -> Self:
-        self.err.suggest(suggestion)
+        self.err = self.err.suggest(suggestion)
         return self
 
     def make_err(self) -> Err:

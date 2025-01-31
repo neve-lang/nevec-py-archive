@@ -1,6 +1,6 @@
 import struct
 
-from typing import Self, List, Tuple
+from typing import Self, List, Tuple, Optional
 from enum import auto, Enum
 
 class ValType(Enum):
@@ -14,7 +14,22 @@ class ValType(Enum):
 
 class ObjType(Enum):
     STR = auto()
+    USTR = auto()
+
     TABLE = auto()
+
+
+class Encoding(Enum):
+    UTF8 = auto()
+    UTF16 = auto()
+    UTF32 = auto()
+
+    @staticmethod
+    def from_str(s: str) -> Optional["Encoding"]:
+        return next(
+            (e for e in Encoding if e.name == s.upper()),
+            None
+        )
 
 
 class Const[T]:
@@ -25,7 +40,7 @@ class Const[T]:
     def emit_int(self, data: int, size: int) -> bytes:
         return data.to_bytes(size, byteorder="little")
 
-    def emit_type(self, type: ValType | ObjType) -> bytes:
+    def emit_type(self, type: ValType | ObjType | Encoding) -> bytes:
         return self.emit_int(type.value - 1, 1)
 
     def emit(self) -> List[bytes]:
@@ -97,10 +112,19 @@ class Num(Const[float]):
         return str(self.value)
 
 
-class StrLit(Const[Tuple[str, bool]]):
+class StrLit(Const[Tuple[str, str, bool]]):
     def emit(self) -> List[bytes]:
-        string = self.value[0]
-        is_interned = int(self.value[1])
+        encoding = self.value[0]
+
+        return (
+            self.emit_ascii() 
+            if encoding == "ascii" 
+            else self.emit_unicode()
+        )
+
+    def emit_ascii(self) -> List[bytes]:
+        string = self.value[1]
+        is_interned = int(self.value[2])
 
         return [
             self.emit_type(ValType.OBJ),
@@ -108,6 +132,30 @@ class StrLit(Const[Tuple[str, bool]]):
             self.emit_int(len(string), 4),
             string.encode(),
             self.emit_int(is_interned, 1) 
+        ]
+
+    def emit_unicode(self) -> List[bytes]:
+        encoding = self.value[0]
+        string = self.value[1]
+        is_interned = int(self.value[2])
+
+        encoded_str = string.encode(encoding)
+
+        encoding_val = Encoding.from_str(encoding)
+        if encoding_val is None:
+            raise ValueError("malformed IR")
+
+        return [
+            self.emit_type(ValType.OBJ),
+            self.emit_type(ObjType.USTR),
+            self.emit_type(encoding_val),
+
+            self.emit_int(len(string), 4),
+            self.emit_int(len(encoded_str), 4),
+
+            encoded_str,
+
+            self.emit_int(is_interned, 1)
         ]
 
     def __eq__(self, other: Const) -> bool:

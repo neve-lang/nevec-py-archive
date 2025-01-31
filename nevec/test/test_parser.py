@@ -1,6 +1,7 @@
 import test
 
 from nevec.parse.parse import Parse
+from nevec.err.err import *
 
 def get_repr(input: str):
     parse = Parse(input)
@@ -25,14 +26,14 @@ class TestParse:
         assert repr == input
 
     def test_three(self):
-        input = "1 bitor 2 ^ 3849348 / 23 * 9 + nil / true & false"
+        input = "1 bor 2 ^ 3849348 / 23 * 9 + nil / true & false"
 
         repr = get_repr(input)
 
         assert repr == input
 
     def test_four(self):
-        input = "1 bitor \"Hello, world!\" + -34.5 / 92 ^ \"()\""
+        input = "1 bor \"Hello, world!\" + -34.5 / 92 ^ \"()\""
         
         repr = get_repr(input)
 

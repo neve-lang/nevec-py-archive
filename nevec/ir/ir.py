@@ -131,8 +131,6 @@ class IBinOp(IExpr):
         LT = auto()
         LTE = auto()
 
-        CONCAT = auto()
-
         def opcode(self) -> Opcode:
             return Opcode(Opcode.ADD.value + self.value - 1)
 
@@ -155,10 +153,37 @@ class IBinOp(IExpr):
         self.type = type
 
     def __repr__(self) -> str:
-        if self.op_lexeme == "":
-            return f"{self.left.sym} {self.right.sym}"
-
         return f"{self.left.sym} {self.op_lexeme} {self.right.sym}"
+
+
+class IConcat(IExpr):
+    def __init__(
+        self,
+        left: Tac,
+        right: Tac,
+        loc: Loc,
+        type: Type,
+    ):
+        self.left: Tac = left
+        self.right: Tac = right
+
+        self.loc: Loc = loc
+        self.type = type
+
+    def op(self) -> Opcode:
+        assert (
+            isinstance(self.left.expr, IExpr) and
+            isinstance(self.right.expr, IExpr)
+        )
+
+        assert self.left.expr.type == self.right.expr.type
+
+        type = self.left.expr.type
+
+        return Opcode.CONCAT if type == Types.STR else Opcode.UCONCAT
+
+    def __repr__(self) -> str:
+        return f"{self.left.sym} concat {self.right.sym}"
 
 
 class TableSet(SetIExpr):
@@ -271,20 +296,37 @@ class IStr(IConst):
     def __init__(
         self,
         value: str,
-        is_interned: bool,
         loc: Loc,
         type: Type,
     ):
         self.value: str = value
-        self.is_interned: bool = is_interned
+        self.is_interned: bool = type == Types.STR or type == Types.STR8
 
         self.loc: Loc = loc
         self.type: Type = type
 
     def const(self) -> Const:
-        value = (self.value, self.is_interned)
+        encoding = self.encoding()
+        value = (encoding, self.value, self.is_interned)
 
         return StrLit(value)
+
+    def encoding(self) -> str:
+        match self.type:
+            case Types.STR:
+                return "ascii"
+
+            case Types.STR8:
+                return "utf8"
+
+            case Types.STR16:
+                return "utf16"
+
+            case Types.STR32:
+                return "utf32"
+            
+            case _:
+                raise ValueError("malformed IR")
 
     def __repr__(self) -> str:
         return f"\"{self.value}\""
@@ -301,6 +343,8 @@ class ITable(IConst):
         self.keys = keys
         self.vals = vals
 
+        self.const_keys = [k.const() for k in self.keys]
+
         self.loc = loc
         self.type = type
 
@@ -314,8 +358,23 @@ class ITable(IConst):
         )
 
     def add_entry(self, key: IConst, val: IConst):
+        existing = next(
+            (
+                i
+                for i, k in enumerate(self.keys)
+                if k.const() in self.const_keys
+            ),
+            None
+        )
+
+        if existing is not None:
+            del self.keys[existing] 
+            del self.vals[existing]
+
         self.keys.append(key)
         self.vals.append(val)
+
+        self.const_keys.append(key.const())
 
     def const(self) -> Const:
         keys = [k.const() for k in self.keys]

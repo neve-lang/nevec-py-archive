@@ -9,7 +9,9 @@ class TypeKind(Enum):
     FLOAT = auto()
     BOOL = auto()
     NIL = auto()
+
     STR = auto()
+    STR8 = auto()
     STR16 = auto()
     STR32 = auto()
 
@@ -30,6 +32,7 @@ class Type:
     def is_str(self) -> bool:
         return (
             self == Types.STR or
+            self == Types.STR8 or
             self == Types.STR16 or
             self == Types.STR32
         )
@@ -76,14 +79,18 @@ class TableType(Type):
     def is_poisoned(self) -> bool:
         return self.key.is_poisoned() or self.val.is_poisoned()
 
+
 class Types:
     UNKNOWN = Type(TypeKind.UNKNOWN, "Unknown")
     UNKNOWN_SND = Type(TypeKind.UNKNOWN_SND, "Unknown")
+
     INT = Type(TypeKind.INT, "Int")
     FLOAT = Type(TypeKind.FLOAT, "Float")
     BOOL = Type(TypeKind.BOOL, "Bool")
     NIL = Type(TypeKind.NIL, "Nil")
+
     STR = Type(TypeKind.STR, "Str")
+    STR8 = Type(TypeKind.STR8, "Str8")
     STR16 = Type(TypeKind.STR16, "Str16")
     STR32 = Type(TypeKind.STR32, "Str32")
 

@@ -327,7 +327,20 @@ class Str(Expr):
         return value[begin:end]
     
     def infer_type(self) -> Type:
-        return Types.STR
+        return (
+            Types.STR
+            if not self.is_unicode()
+            else Types.STR8
+        )
+
+    def is_unicode(self) -> bool:
+        encoded = self.value.encode("utf8")
+        
+        try:
+            _ = encoded.decode("ascii")
+            return False
+        except UnicodeDecodeError:
+            return True
 
     def __repr__(self):
         return f"\"{self.value}\""

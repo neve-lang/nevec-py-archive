@@ -184,9 +184,16 @@ class Check(Visit[Ast, bool]):
             # Concat node, it must find a Str node on the left hand side
             culprit = right
 
+            number = "".join(filter(lambda c: c.isnumeric(), left.type.name))
+
+            # i'm endlessly sorry for this
+            # i promise i'll work on refactoring everything once we implement
+            # string encodings
             utf_conversion = (
-                ".utf" + culprit.type.name[:-2]
+                ".utf" + number
                 if left.type != Types.STR
+                else ".ascii"
+                if culprit.type != Types.STR
                 else ""
             )
 
@@ -218,7 +225,7 @@ class Check(Visit[Ast, bool]):
                         f"converts it to {left.type} (not implemented yet)",
                         loc_to_replace,
                         fix,
-                        insert=not isinstance(culprit, Op)
+                        insert_if=not isinstance(culprit, Op)
                     )
                 ))
             else:
@@ -235,7 +242,7 @@ class Check(Visit[Ast, bool]):
                         f"converts it to {left.type} (not implemented yet)",
                         loc_to_replace,
                         fix,
-                        insert=not isinstance(culprit, Op)
+                        insert_if=not isinstance(culprit, Op)
                     )
                 ))
 
@@ -333,7 +340,8 @@ class Check(Visit[Ast, bool]):
         return False
 
     def visit_Interpol(self, interpol: Interpol) -> bool:
-        _ = interpol
+        if self.visit(interpol.expr):
+            return True
 
         # TODO: check if each expression implements Show
         return False
