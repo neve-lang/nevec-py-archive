@@ -131,8 +131,6 @@ class IBinOp(IExpr):
         LT = auto()
         LTE = auto()
 
-        CONCAT = auto()
-
         def opcode(self) -> Opcode:
             return Opcode(Opcode.ADD.value + self.value - 1)
 
@@ -155,10 +153,37 @@ class IBinOp(IExpr):
         self.type = type
 
     def __repr__(self) -> str:
-        if self.op_lexeme == "":
-            return f"{self.left.sym} {self.right.sym}"
-
         return f"{self.left.sym} {self.op_lexeme} {self.right.sym}"
+
+
+class IConcat(IExpr):
+    def __init__(
+        self,
+        left: Tac,
+        right: Tac,
+        loc: Loc,
+        type: Type,
+    ):
+        self.left: Tac = left
+        self.right: Tac = right
+
+        self.loc: Loc = loc
+        self.type = type
+
+    def op(self) -> Opcode:
+        assert (
+            isinstance(self.left.expr, IExpr) and
+            isinstance(self.right.expr, IExpr)
+        )
+
+        assert self.left.expr.type == self.right.expr.type
+
+        type = self.left.expr.type
+
+        return Opcode.CONCAT if type == Types.STR else Opcode.UCONCAT
+
+    def __repr__(self) -> str:
+        return f"{self.left.sym} concat {self.right.sym}"
 
 
 class TableSet(SetIExpr):

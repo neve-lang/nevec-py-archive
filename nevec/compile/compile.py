@@ -172,6 +172,20 @@ class Compile(Visit[Ir, None]):
 
         self.emit(instr, bin_op.loc.line)
 
+    def visit_IConcat(self, concat: IConcat, dest_reg: int):
+        left = self.reg_of(concat.left.sym)
+        right = self.reg_of(concat.right.sym)
+
+        instr = Instr(
+            concat.op(),
+
+            dest_reg,
+            left,
+            right
+        )
+
+        self.emit(instr, concat.loc.line)
+
     def visit_TableSet(self, table_set: TableSet, dest_reg: int):
         table = self.reg_of(table_set.table.sym)
         val = self.reg_of(table_set.expr.sym)
@@ -228,7 +242,6 @@ class Compile(Visit[Ir, None]):
         entries = TableLit.make_entries(keys, vals)
 
         self.emit_const(TableLit, entries, dest_reg, table.loc.line)
-        
 
     def visit_INil(self, nil: INil, dest_reg: int):
         self.emit(Instr(Opcode.NIL, dest_reg), nil.loc.line)

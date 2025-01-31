@@ -175,12 +175,9 @@ class ToIr(Visit[Ast, Tac]):
         left = self.visit(concat.left)
         right = self.visit(concat.right)
 
-        expr = IBinOp(
+        expr = IConcat(
             left,
-            IBinOp.Op(concat.op.value),
             right,
-
-            "concat",
 
             concat.loc,
             concat.type,
