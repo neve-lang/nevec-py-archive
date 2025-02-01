@@ -62,6 +62,13 @@ class Sym[T]:
 
         return self.lifetime.is_valid_in(moment)
 
+    def copy(self) -> "Sym":
+        return Sym(
+            self.name,
+            self.index,
+            self.first
+        )
+
     def __repr__(self) -> str:
         return self.full_name
 

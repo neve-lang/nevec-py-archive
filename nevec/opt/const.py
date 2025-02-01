@@ -9,14 +9,14 @@ class ConstFold(Pass):
         left = bin_op.left
         right = bin_op.right
 
-        assert isinstance(left.expr, IExpr) and isinstance(right.expr, IExpr)
-
         if not self.is_propagatable(left) or not self.is_propagatable(right):
             self.emit(ctx)
             return
 
         opt = self.fold_bin_op(bin_op, ctx)
-        ctx.expr = opt.expr
+
+        opt_operand = opt.operand()
+        ctx.update(opt_operand.expr)
         
         left_sym = left.sym
         right_sym = right.sym
@@ -32,14 +32,14 @@ class ConstFold(Pass):
         left = concat.left
         right = concat.right
 
-        assert isinstance(left.expr, IExpr) and isinstance(right.expr, IExpr)
-
         if not self.is_propagatable(left) or not self.is_propagatable(right):
             self.emit(ctx)
             return
 
         opt = self.fold_concat(concat, ctx)
-        ctx.expr = opt.expr
+
+        opt_operand = opt.operand()
+        ctx.update(opt_operand.expr)
 
         left_sym = left.sym
         right_sym = right.sym
@@ -54,14 +54,14 @@ class ConstFold(Pass):
 
         operand = un_op.operand
 
-        assert isinstance(operand.expr, IExpr)
-
         if not self.is_propagatable(operand):
             self.emit(ctx)
             return
 
         opt = self.fold_un_op(un_op, ctx)
-        ctx.expr = opt.expr
+
+        opt_operand = opt.operand()
+        ctx.update(opt_operand.expr)
 
         operand_sym = operand.sym
 
@@ -187,9 +187,6 @@ class ConstFold(Pass):
             case Types.BOOL:
                 return self.fold_comparison(bin_op, ctx)
 
-            case Types.STR | Types.STR8 | Types.STR16 | Types.STR32:
-                return self.fold_concat(bin_op, ctx)
-
         raise ValueError("malformed IR")
 
     def fold_arith(self, bin_op: IBinOp, ctx: Tac) -> Tac:
@@ -266,10 +263,11 @@ class ConstFold(Pass):
         left = left_node.value
         right = right_node.value
 
+        # i'm equally sorry about this
         left = f"\"{left}\"" if isinstance(left_node, IStr) else left
         right = f"\"{right}\"" if isinstance(right_node, IStr) else right
         
-        # i'm equally sorry about this
+        # ...  and this
         result = eval(f"{left} {bin_op.op_lexeme} {right}")
 
         expr = IStr(result, bin_op.loc, bin_op.type)

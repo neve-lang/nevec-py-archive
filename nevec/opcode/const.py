@@ -159,13 +159,16 @@ class StrLit(Const[Tuple[str, str, bool]]):
         ]
 
     def __eq__(self, other: Const) -> bool:
-        return (
-            isinstance(other, StrLit) and
-            self.value == other.value
-        )
+        if not isinstance(other, StrLit):
+            return False
+
+        a = self.value[1]
+        b = other.value[1]
+
+        return a == b
 
     def __repr__(self) -> str:
-        return self.value[0]
+        return self.value[1]
 
 
 class TableLit(Const[List[Const]]):
