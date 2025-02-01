@@ -13,7 +13,15 @@ class Opt:
     def __init__(self, syms: Syms):
         self.syms: Syms = syms
 
-    def optimize(
+    def optimize(self, ir: List[Tac]) -> List[Tac]:
+        optimized = self.optimization_cycle(ir)
+
+        if optimized == ir:
+            return optimized
+
+        return self.optimize(optimized)
+
+    def optimization_cycle(
         self,
         ir: List[Tac],
         passes: Optional[List[type[Pass]]]=None
@@ -28,4 +36,4 @@ class Opt:
 
         opt_ir = opt_pass.optimize(ir)
 
-        return self.optimize(opt_ir, passes[1:])
+        return self.optimization_cycle(opt_ir, passes[1:])

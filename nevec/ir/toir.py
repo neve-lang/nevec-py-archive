@@ -1,5 +1,3 @@
-from typing import Tuple
-
 from nevec.ast.ast import *
 from nevec.ast.visit import Visit
 

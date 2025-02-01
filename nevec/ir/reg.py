@@ -1,6 +1,4 @@
-from typing import Dict, Self, List, Optional, Tuple
-
-from enum import auto, Enum
+from typing import Dict, Self, List, Tuple
 
 from nevec.ir.sym import Sym
 
