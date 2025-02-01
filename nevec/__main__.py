@@ -48,12 +48,11 @@ if __name__ == "__main__":
         print("unoptimized:")
         print("\n".join(map(str, ir)))
 
-        if do_opt:
-            opt_ir = Opt(syms).optimize(ir)
-            print("optimized:")
-            print("\n".join(map(str, opt_ir)))
+        opt_ir = Opt(syms, do_opt).optimize(ir)
+        print("optimized:")
+        print("\n".join(map(str, opt_ir)))
 
-            ir = opt_ir
+        ir = opt_ir
 
         graph = InterferenceGraph(syms.values(), debug=False)
 
