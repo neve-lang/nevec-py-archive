@@ -71,9 +71,9 @@ class Pass(Visit[Ir, None]):
     def visit_Tac(self, tac: Tac):
         self.visit(tac.expr, tac)
 
-    def is_propagatable(self, tac: Tac) -> bool:
+    def is_propagatable(self, operand: Operand) -> bool:
         return (
-            isinstance(tac.expr, IConst) and
-            tac.sym.uses <= 1 
+            isinstance(operand.expr, IConst) and
+            operand.sym.uses <= 1 
         )
 

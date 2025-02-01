@@ -39,6 +39,23 @@ class SetIExpr(IExpr):
         self.loc: Loc = loc
 
 
+class Operand:
+    def __init__(
+        self, 
+        sym: Sym,
+        expr: IExpr,
+        loc: Loc
+    ):
+        self.sym: Sym = sym
+        self.expr: IExpr = expr
+        self.loc: Loc = loc
+
+        self.type: Type = expr.type
+
+    def __repr__(self) -> str:
+        return str(self.sym)
+
+
 class Tac:
     def __init__(
         self,
@@ -54,8 +71,30 @@ class Tac:
         # thanks to SSA
         self.moment: Moment = self.sym.first
 
+        self.own_operand: Optional[Operand] = None
+
     def next_moment(self) -> Moment:
         return self.moment + 1
+
+    def operand(self) -> Operand:
+        assert isinstance(self.expr, IExpr)
+
+        operand = Operand(
+            self.sym,
+            self.expr,
+            self.loc
+        )
+
+        self.own_operand = operand
+        return operand
+
+    def update(self, expr: IExpr):
+        self.expr = expr
+
+        if self.own_operand is None:
+            return
+
+        self.own_operand.expr = expr
     
     def __repr__(self) -> str:
         if isinstance(self.expr, IOp | SetIExpr):
@@ -80,12 +119,12 @@ class IUnOp(IExpr):
     def __init__(
         self,
         op: Op,
-        operand: Tac,
+        operand: Operand,
         loc: Loc,
         type: Type,
     ):
         self.op: IUnOp.Op = op
-        self.operand: Tac = operand
+        self.operand: Operand = operand
 
         self.loc: Loc = loc
         self.type: Type = type
@@ -93,22 +132,22 @@ class IUnOp(IExpr):
     def __repr__(self) -> str:
         match self.op:
             case IUnOp.Op.NEG:
-                return f"neg {self.operand.sym}"
+                return f"neg {self.operand}"
 
             case IUnOp.Op.NOT:
-                return f"not {self.operand.sym}"
+                return f"not {self.operand}"
 
             case IUnOp.Op.IS_NIL:
-                return f"isnil {self.operand.sym}"
+                return f"isnil {self.operand}"
 
             case IUnOp.Op.IS_NOT_NIL:
-                return f"isnotnil {self.operand.sym}"
+                return f"isnotnil {self.operand}"
             
             case IUnOp.Op.IS_ZERO:
-                return f"isz {self.operand.sym}"
+                return f"isz {self.operand}"
 
             case IUnOp.Op.SHOW:
-                return f"show {self.operand.sym}"
+                return f"show {self.operand}"
 
 
 class IBinOp(IExpr):
@@ -137,93 +176,85 @@ class IBinOp(IExpr):
 
     def __init__(
         self,
-        left: Tac,
+        left: Operand,
         op: Op,
-        right: Tac,
+        right: Operand,
         op_lexeme: str,
         loc: Loc,
         type: Type,
     ):
-        self.left: Tac = left
+        self.left: Operand = left
         self.op: IBinOp.Op = op
-        self.right: Tac = right
+        self.right: Operand = right
         self.op_lexeme: str = op_lexeme
 
         self.loc: Loc = loc
         self.type = type
 
     def __repr__(self) -> str:
-        return f"{self.left.sym} {self.op_lexeme} {self.right.sym}"
+        return f"{self.left} {self.op_lexeme} {self.right}"
 
 
 class IConcat(IExpr):
     def __init__(
         self,
-        left: Tac,
-        right: Tac,
+        left: Operand,
+        right: Operand,
         loc: Loc,
         type: Type,
     ):
-        self.left: Tac = left
-        self.right: Tac = right
+        self.left: Operand = left
+        self.right: Operand = right
 
         self.loc: Loc = loc
         self.type = type
 
     def op(self) -> Opcode:
-        assert (
-            isinstance(self.left.expr, IExpr) and
-            isinstance(self.right.expr, IExpr)
-        )
+        assert self.left.type == self.right.type
 
-        assert self.left.expr.type == self.right.expr.type
-
-        type = self.left.expr.type
-
-        return Opcode.CONCAT if type == Types.STR else Opcode.UCONCAT
+        return Opcode.CONCAT if self.left.type == Types.STR else Opcode.UCONCAT
 
     def __repr__(self) -> str:
-        return f"{self.left.sym} concat {self.right.sym}"
+        return f"{self.left} concat {self.right}"
 
 
 class TableSet(SetIExpr):
     def __init__(
         self,
-        table: Tac,
-        key: Tac,
-        expr: Tac,
+        table: Operand,
+        key: Operand,
+        expr: Operand,
         type: Type,
         loc: Loc
     ):
-        self.table: Tac = table
-        self.key: Tac = key
+        self.table: Operand = table
+        self.key: Operand = key
 
-        self.expr: Tac = expr
+        self.expr: Operand = expr
 
         self.type: Type = type
         self.loc: Loc = loc
 
     def __repr__(self) -> str:
-        return f"{self.table.sym}[{self.key.sym}] = {self.expr.sym}"
+        return f"{self.table}[{self.key}] = {self.expr}"
 
 
 class TableGet(IExpr):
     def __init__(
         self,
-        table: Tac,
-        key: Tac,
+        table: Operand,
+        key: Operand,
         loc: Loc,
         type: Type
     ):
-        self.table: Tac = table
-
-        self.key: Tac = key
+        self.table: Operand = table
+        self.key: Operand = key
 
         self.loc: Loc = loc
         self.type: Type = type
 
     def __repr__(self) -> str:
-        return f"{self.table.sym}[{self.key.sym}]"
+        return f"{self.table}[{self.key}]"
 
 
 class IConst[T](IExpr):
@@ -362,7 +393,7 @@ class ITable(IConst):
             (
                 i
                 for i, k in enumerate(self.keys)
-                if k.const() in self.const_keys
+                if k.const() == key.const()
             ),
             None
         )
