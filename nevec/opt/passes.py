@@ -32,15 +32,9 @@ class Pass(Visit[Ir, None]):
             None 
         )
 
-    def elim_if_dead(self, sym: Sym, lend_name_to: Optional[Sym]=None):
+    def elim_if_dead(self, sym: Sym):
         if sym.uses > 0:
             return
-
-        lend_name_to = (
-            lend_name_to 
-            if lend_name_to is not None
-            else self.syms.next_after(sym)
-        )
 
         index = self.find_new_index(sym)
 
@@ -51,9 +45,6 @@ class Pass(Visit[Ir, None]):
             )
 
         del self.opts[index]
-
-        if lend_name_to is not None:
-            lend_name_to.rename(after=sym)
 
         del sym
 

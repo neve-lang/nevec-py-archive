@@ -22,6 +22,7 @@ class TypeKind(Enum):
 class Type:
     kind: TypeKind
     name: str
+    is_mutable: bool = False
 
     def is_num(self) -> bool:
          return (
@@ -75,6 +76,8 @@ class TableType(Type):
         self.val: Type = val
 
         self.name = f"[{self.key}: {self.val}]"
+
+        self.is_mutable = True
 
     def is_poisoned(self) -> bool:
         return self.key.is_poisoned() or self.val.is_poisoned()

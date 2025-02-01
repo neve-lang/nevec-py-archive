@@ -4,8 +4,6 @@ from nevec.opt.passes import Pass
 # NOTE: all this will change once we implement ideas
 class ConstFold(Pass):
     def visit_IBinOp(self, bin_op: IBinOp, ctx: Tac):
-        dest_sym = ctx.sym
-
         left = bin_op.left
         right = bin_op.right
 
@@ -23,12 +21,10 @@ class ConstFold(Pass):
 
         self.emit(opt)
 
-        self.elim_if_dead(left_sym, lend_name_to=dest_sym)
-        self.elim_if_dead(right_sym, lend_name_to=dest_sym)
+        self.elim_if_dead(left_sym)
+        self.elim_if_dead(right_sym)
 
     def visit_IConcat(self, concat: IConcat, ctx: Tac):
-        dest_sym = ctx.sym
-
         left = concat.left
         right = concat.right
 
@@ -46,12 +42,10 @@ class ConstFold(Pass):
 
         self.emit(opt)
 
-        self.elim_if_dead(left_sym, lend_name_to=dest_sym)
-        self.elim_if_dead(right_sym, lend_name_to=dest_sym)
+        self.elim_if_dead(left_sym)
+        self.elim_if_dead(right_sym)
 
     def visit_IUnOp(self, un_op: IUnOp, ctx: Tac):
-        dest_sym = ctx.sym
-
         operand = un_op.operand
 
         if not self.is_propagatable(operand):
@@ -67,7 +61,7 @@ class ConstFold(Pass):
 
         self.emit(opt)
 
-        self.elim_if_dead(operand_sym, lend_name_to=dest_sym)
+        self.elim_if_dead(operand_sym)
 
     def fold_un_op(self, un_op: IUnOp, ctx: Tac) -> Tac:
         match un_op.type:

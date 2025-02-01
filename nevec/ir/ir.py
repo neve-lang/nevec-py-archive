@@ -264,7 +264,10 @@ class IConst[T](IExpr):
         self.type: Type = type
 
     def const(self) -> Const:
-        ... 
+        raise NotImplementedError("emission not implemented")
+
+    def is_identity(self) -> bool:
+        return False
 
 
 class IInt(IConst):
@@ -281,6 +284,9 @@ class IInt(IConst):
 
     def const(self) -> Const:
         return Num(self.value)
+
+    def is_identity(self) -> bool:
+        return self.value == 0
 
     def __repr__(self) -> str:
         return f"{self.value}"
@@ -301,6 +307,9 @@ class IFloat(IConst):
     def const(self) -> Const:
         return Num(self.value)
 
+    def is_identity(self) -> bool:
+        return self.value == 0.0
+
     def __repr__(self) -> str:
         return f"{self.value}"
 
@@ -318,6 +327,9 @@ class IBool(IConst):
 
     def const(self) -> Const:
         return BoolLit(self.value)
+
+    def is_identity(self) -> bool:
+        return True
 
     def __repr__(self) -> str:
         return str(self.value).lower()
@@ -341,6 +353,9 @@ class IStr(IConst):
         value = (encoding, self.value, self.is_interned)
 
         return StrLit(value)
+
+    def is_identity(self) -> bool:
+        return self.value == ""
 
     def encoding(self) -> str:
         match self.type:
@@ -415,6 +430,9 @@ class ITable(IConst):
             TableLit.make_entries(keys, vals)
         )
 
+    def is_identity(self) -> bool:
+        return len(self.keys) == 0
+
     def repr_keys_and_vals(
         self,
         keys: List[IConst],
@@ -454,6 +472,9 @@ class INil(IConst):
 
     def const(self) -> Const:
         return NilLit(None)
+
+    def is_identity(self) -> bool:
+        return True
 
     def __repr__(self) -> str:
         return "nil"
