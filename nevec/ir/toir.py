@@ -1,5 +1,3 @@
-from typing import Tuple
-
 from nevec.ast.ast import *
 from nevec.ast.visit import Visit
 
@@ -63,7 +61,7 @@ class ToIr(Visit[Ast, Tac]):
         
         expr = IUnOp(
             IUnOp.Op(un_op.op.value),
-            operand,
+            operand.operand(),
 
             un_op.loc,
             un_op.type
@@ -88,9 +86,10 @@ class ToIr(Visit[Ast, Tac]):
         op_lexeme = bitwise.tok.lexeme
 
         expr = IBinOp(
-            left,
+            left.operand(),
             IBinOp.Op(bitwise.op.value),
-            right,
+            right.operand(),
+
             op_lexeme,
 
             bitwise.loc,
@@ -118,9 +117,10 @@ class ToIr(Visit[Ast, Tac]):
         op_lexeme = comparison.tok.lexeme
 
         expr = IBinOp(
-            left,
+            left.operand(),
             IBinOp.Op(comparison.op.value),
-            right,
+            right.operand(),
+
             op_lexeme,
 
             comparison.loc,
@@ -148,9 +148,10 @@ class ToIr(Visit[Ast, Tac]):
         op_lexeme = arith.tok.lexeme
 
         expr = IBinOp(
-            left,
+            left.operand(),
             IBinOp.Op(arith.op.value),
-            right,
+            right.operand(),
+
             op_lexeme,
 
             arith.loc,
@@ -175,12 +176,9 @@ class ToIr(Visit[Ast, Tac]):
         left = self.visit(concat.left)
         right = self.visit(concat.right)
 
-        expr = IBinOp(
-            left,
-            IBinOp.Op(concat.op.value),
-            right,
-
-            "concat",
+        expr = IConcat(
+            left.operand(),
+            right.operand(),
 
             concat.loc,
             concat.type,
@@ -205,7 +203,7 @@ class ToIr(Visit[Ast, Tac]):
 
         expr = IUnOp(
             IUnOp.Op.SHOW,
-            operand,
+            operand.operand(),
             show.loc,
             show.type
         )
@@ -236,9 +234,10 @@ class ToIr(Visit[Ast, Tac]):
 
         exprs = list(map(
             lambda i: TableSet(
-                tac,
-                keys[i],
-                vals[i],
+                tac.operand(),
+                keys[i].operand(),
+                vals[i].operand(),
+
                 table.type,
                 table.loc
             ),

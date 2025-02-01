@@ -1,5 +1,7 @@
 from sys import stderr
 
+import emoji
+
 from enum import Enum, auto
 from typing import Dict, List, Optional, Self, Tuple
 
@@ -24,10 +26,10 @@ class Note:
         self.loc: Loc = loc
         self.msg: str = msg
 
-        self.center: int = loc.length // 2
-        self.length: int = loc.col + loc.length - 2
+        self.center: int = loc.true_length // 2
+        self.length: int = loc.true_col + loc.true_length - 2
 
-        self.hang: int = loc.col + self.center - 1
+        self.hang: int = loc.true_col + self.center - 1
 
     def underline(self, col=1, initial_col=0) -> Tuple[int, str]:
         loc = self.loc
@@ -36,11 +38,11 @@ class Note:
             next = self.underline(col + 1, initial_col)
             return (next[0] + 1, self.color() + "┬" + next[1])
 
-        if col >= loc.col - 1 and col <= self.length:
+        if col >= loc.true_col - 1 and col <= self.length:
             next = self.underline(col + 1, initial_col)
             return (next[0] + 1, self.color() + "─" + next[1])
 
-        if col < loc.col:
+        if col < loc.true_col:
             next = self.underline(col + 1, initial_col)
             return (next[0] + 1, self.color() + " " + next[1])
 
@@ -252,13 +254,13 @@ class Suggestion:
         fix_msg: str, 
         loc_to_replace: Loc, 
         fix: str,
-        insert=False
+        insert_if=False
     ):
         self.header_msg: str = header_msg 
         self.fix_msg: str = fix_msg
-        self.loc: Loc = loc_to_replace
+        self.loc: Loc = loc_to_replace.copy()
         self.fix: str = fix
-        self.insert: bool = insert
+        self.insert: bool = insert_if
 
         self.col: int = self.loc.col
         self.line: int = self.loc.line
@@ -267,6 +269,7 @@ class Suggestion:
         self.replace_length: int = self.loc.length
 
         self.loc.length = len(self.fix)
+        self.loc.true_length = self.get_len(self.fix)
 
     def emit(self, lines: List[str]) -> List[str]:
         source_line = lines[self.line - 1]
@@ -298,6 +301,16 @@ class Suggestion:
             given_line=modified_line, 
             given_line_number=self.line
         )
+
+    def get_len(self, s: Optional[str]=None) -> int:
+        s = s if s is not None else self.fix
+
+        if len(s) == 0:
+            return 0
+
+        char = s[0]
+        return 1 + int(emoji.is_emoji(char)) + self.get_len(s[1:])
+
 
 class Err:
     def __init__(

@@ -38,6 +38,7 @@ class Opcode(Enum):
     LESS_EQ = auto()
 
     CONCAT = auto()
+    UCONCAT = auto()
 
     TABLE_NEW = auto()
     TABLE_SET = auto()

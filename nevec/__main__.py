@@ -15,7 +15,7 @@ def read_options(args: List[str]) -> List[str]:
 if __name__ == "__main__":
     args = sys.argv
 
-    if len(args) <= 2:
+    if len(args) < 2:
         # TODO: replace this with a CLI err
         print("usage: nevec [file]")
         exit(1)
@@ -48,12 +48,11 @@ if __name__ == "__main__":
         print("unoptimized:")
         print("\n".join(map(str, ir)))
 
-        if do_opt:
-            opt_ir = Opt(syms).optimize(ir)
-            print("optimized:")
-            print("\n".join(map(str, opt_ir)))
+        opt_ir = Opt(syms, do_opt).optimize(ir)
+        print("optimized:")
+        print("\n".join(map(str, opt_ir)))
 
-            ir = opt_ir
+        ir = opt_ir
 
         graph = InterferenceGraph(syms.values(), debug=False)
 

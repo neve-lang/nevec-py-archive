@@ -323,7 +323,7 @@ class Parse:
             #   "Hello, "
             #   "world!"
             # )
-            if expr.type == Types.STR and self.check(TokType.STR):
+            if expr.type.is_str() and self.check(TokType.STR):
                 expr = self.str_concat(expr)
                 continue
             
@@ -333,21 +333,9 @@ class Parse:
         return expr
 
     def fun_call(self, callee: Expr, parens=False) -> Expr:
-        if callee.type == Types.STR:
-            if parens:
-                self.show_err(
-                    Report.err(
-                        "string concatenation may not have parentheses",
-                        self.prev.loc
-                    ).show(
-                        Line(self.prev.loc).add(Note(
-                            NoteType.ERR,
-                            self.prev.loc,
-                            "may not have parentheses"
-                        ))
-                    )
-                )
+        _ = parens
 
+        if callee.type.is_str():
             return self.str_concat(callee)
 
         raise NotImplementedError("function calls not implemented yet")
