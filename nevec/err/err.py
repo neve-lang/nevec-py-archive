@@ -288,7 +288,7 @@ class Suggestion:
         if not self.insert:
             chars = (
                 chars[:self.col + self.loc.length - 1] +
-                chars[self.col + self.loc.length - 2 + self.replace_length:]
+                chars[self.col + self.loc.length - 1 + self.replace_length:]
             )
         
         modified_line = "".join(chars)
