@@ -176,13 +176,6 @@ class Lex:
 
         is_float = self.on_float()
 
-        if self.lexeme == ["0"]:
-            print(is_float)
-            print(self.on_float())
-            print(self.char == ".")
-            print(self.is_digit(self.peek()))
-            print(self.peek())
-
         if is_float:
             self.advance()
 

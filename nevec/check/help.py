@@ -170,7 +170,8 @@ class Suggest:
             f"you can convert {what.type} to {to}",
             f"converts {what.type} to {to}",
             Suggest.replacement_loc_for(what),
-            fix
+            fix,
+            insert_if=Suggest.should_insert_for(what)
         )
 
     @staticmethod
@@ -181,5 +182,3 @@ class Suggest:
             lambda n: Suggest.conversion_for(n, to),
             may_be_converted
         ))
-
-
