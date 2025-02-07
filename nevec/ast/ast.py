@@ -10,6 +10,13 @@ class Ast:
         self.type = type
         self.loc = loc
 
+    @staticmethod
+    def empty() -> "Ast":
+        return Ast(
+            Types.UNKNOWN,
+            Loc.new()
+        )
+
 
 class Program(Ast):
     def __init__(self, expr: "Expr"):
@@ -26,6 +33,13 @@ class Expr(Ast):
     def __init__(self, type: Type, loc: Loc):
         self.type = type
         self.loc = loc
+
+    @staticmethod
+    def empty() -> "Expr":
+        return Expr(
+            Types.UNKNOWN,
+            Loc.new()
+        )
 
     def infer_type(self) -> Type:
         return self.type

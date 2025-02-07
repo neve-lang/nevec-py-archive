@@ -1,11 +1,63 @@
 from typing import override, List
 
-from nevec.ast.ast import Expr
+from nevec.ast.ast import Expr, Op
+from nevec.ast.type import Type
 
 from nevec.err.err import *
 from nevec.err.report import Report
 
 from nevec.lex.tok import Loc
+
+
+class Inform:
+    @staticmethod 
+    def at(loc: Loc, that: str) -> Note:
+        return Note.harmless(loc, that)
+
+    @staticmethod
+    def type_of(what: Expr, saying="") -> Note:
+        return Note.harmless(what.loc, f"{saying}: {what.type}")
+
+
+class Suggest:
+    @staticmethod
+    def should_insert_for(what: Expr) -> bool:
+        return not isinstance(what, Op)
+    
+    @staticmethod
+    def replacement_loc_for(what: Expr) -> Loc:
+        return (
+            Loc.right_after(what.loc)
+            if Suggest.should_insert_for(what)
+            else what.loc
+        )
+
+    @staticmethod
+    def method_call_for(what: Expr, suffix: str) -> str:
+        if Suggest.should_insert_for(what):
+            return suffix
+
+        return f"({Report.lexeme_of(what.loc)})" + suffix
+
+    @staticmethod
+    def conversion_for(what: Expr, to: Type) -> Suggestion:
+        fix = Suggest.method_call_for(what, ".somemethod")
+
+        return Suggestion(
+            f"you can convert {what.type} to {to}",
+            f"converts {what.type} to {to}",
+            Suggest.replacement_loc_for(what),
+            fix
+        )
+
+    @staticmethod
+    def possible_conversions(to: Type, *nodes: Expr) -> List[Suggestion]:
+        may_be_converted = [n for n in nodes if n.type != to]
+        
+        return list(map(
+            lambda n: Suggest.conversion_for(n, to),
+            may_be_converted
+        ))
 
 
 class TypeErr(Err):
@@ -25,7 +77,13 @@ class TypeErr(Err):
     def emit(self) -> str:
         return self.err.emit()
 
-    def add(self, note: Note, on_line: int):
+    def show(self, line: Line) -> Self:
+        self.err.lines.append(line)
+        return self
+
+    def add(self, note: Note, on_line: Optional[int]=None) -> Self:
+        on_line = on_line if on_line is not None else note.loc.line
+
         lines = self.err.lines 
         found = list(filter(lambda l: l.line == on_line, lines))
 
@@ -41,8 +99,20 @@ class TypeErr(Err):
 
         return self
 
-    def suggest(self, suggestion: Suggestion) -> Self:
-        self.err = self.err.suggest(suggestion)
+    def add_all(self, *notes: Note) -> Self:
+        list(map(self.add, notes))
+        return self
+
+    def info(self, msg: str, at: Loc) -> Self:
+        return self.add(
+            Note.harmless(
+                at,
+                msg
+            )
+        )
+
+    def suggest(self, *suggestion: Suggestion) -> Self:
+        self.err = self.err.suggest(*suggestion)
         return self
 
     def make_err(self) -> Err:
@@ -50,6 +120,8 @@ class TypeErr(Err):
 
         first_line = Line(first_expr.loc)
         lines = self.make_lines(self.exprs, [first_line])
+
+        lines = sorted(lines, key=lambda l: l.loc.line)
 
         err = Report.err(
             self.msg,

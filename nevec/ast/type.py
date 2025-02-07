@@ -47,6 +47,12 @@ class Type:
     def is_poisoned(self) -> bool:
         return self.kind == TypeKind.UNKNOWN
 
+    def is_invalid(self) -> bool:
+        return self == Types.UNKNOWN
+
+    def is_valid(self) -> bool:
+        return self != Types.UNKNOWN
+
     def unless_unknown(self, *others: "Type") -> "Type":
         if (
             list(filter(Type.is_poisoned, others)) != []

@@ -31,6 +31,14 @@ class Note:
 
         self.hang: int = loc.true_col + self.center - 1
 
+    @staticmethod
+    def harmless(where: Loc, msg: str) -> "Note":
+        return Note(NoteType.HARMLESS, where, msg)
+
+    @staticmethod
+    def fix(where: Loc, msg: str) -> "Note":
+        return Note(NoteType.FIX, where, msg)
+
     def underline(self, col=1, initial_col=0) -> Tuple[int, str]:
         loc = self.loc
 
@@ -280,12 +288,21 @@ class Suggestion:
         if not self.insert:
             chars = (
                 chars[:self.col + self.loc.length - 1] +
-                chars[self.col + self.loc.length - 1 + self.replace_length:]
+                chars[self.col + self.loc.length - 2 + self.replace_length:]
             )
         
         modified_line = "".join(chars)
 
-        as_line = Line(
+        as_line = self.as_line()
+
+        return as_line.emit(
+            lines, 
+            given_line=modified_line, 
+            given_line_number=self.line
+        )
+
+    def as_line(self) -> Line:
+        return Line(
             self.loc,
             header_msg=self.header_msg
         ).add(
@@ -294,12 +311,6 @@ class Suggestion:
                 self.loc,
                 self.fix_msg
             )
-        )
-
-        return as_line.emit(
-            lines, 
-            given_line=modified_line, 
-            given_line_number=self.line
         )
 
     def get_len(self, s: Optional[str]=None) -> int:
@@ -332,12 +343,13 @@ class Err:
         self.lines.append(line)
         return self
 
-    def suggest(self, suggestion: Suggestion) -> Self:
-        self.suggestions.append(suggestion)
+    def suggest(self, *suggestions: Suggestion) -> Self:
+        self.suggestions.extend(suggestions)
         return self
 
     def emit(self) -> str:
         max_line = len(self.code_lines)
+        self.lines = self.cleanup_lines(self.lines)
 
         heading = offset(
             Color.RED, 
@@ -377,6 +389,26 @@ class Err:
         )
 
         return "\n".join([heading, locus, *lines, closing_thing])
+
+    def cleanup_lines(self, lines: List[Line]) -> List[Line]:
+        def remove_redundant_previous(
+            last_line: int,
+            lines: List[Line]
+        ):
+            if lines == []:
+                return
+
+            head = lines[0]
+
+            if head.line == last_line + 1:
+                head.show_previous_line = False
+
+            remove_redundant_previous(head.line, lines[1:])
+
+        sorted_lines = sorted(lines, key=lambda l: l.loc.line)
+        remove_redundant_previous(1, sorted_lines)
+
+        return sorted_lines
 
     def print(self):
         text = self.emit()

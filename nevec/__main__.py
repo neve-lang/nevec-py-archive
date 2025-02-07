@@ -2,7 +2,7 @@ import sys
 
 from typing import List
 
-from nevec.check.check import Check
+from nevec.check.type import TypeCheck
 from nevec.parse.parse import Parse
 from nevec.ir.toir import ToIr
 from nevec.ir.reg import InterferenceGraph
@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
         print(ast)
 
-        had_err = Check().visit(ast)
+        had_err = TypeCheck().visit(ast)
 
         if had_err:
             exit(1)
