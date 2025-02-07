@@ -1,64 +1,11 @@
 from typing import override, List
 
-from nevec.ast.ast import Expr, Op
-from nevec.ast.type import Type
+from nevec.ast.ast import Expr
 
 from nevec.err.err import *
 from nevec.err.report import Report
 
 from nevec.lex.tok import Loc
-
-
-class Inform:
-    @staticmethod 
-    def at(loc: Loc, that: str) -> Note:
-        return Note.harmless(loc, that)
-
-    @staticmethod
-    def type_of(what: Expr, saying="") -> Note:
-        return Note.harmless(what.loc, f"{saying}: {what.type}")
-
-
-class Suggest:
-    @staticmethod
-    def should_insert_for(what: Expr) -> bool:
-        return not isinstance(what, Op)
-    
-    @staticmethod
-    def replacement_loc_for(what: Expr) -> Loc:
-        return (
-            Loc.right_after(what.loc)
-            if Suggest.should_insert_for(what)
-            else what.loc
-        )
-
-    @staticmethod
-    def method_call_for(what: Expr, suffix: str) -> str:
-        if Suggest.should_insert_for(what):
-            return suffix
-
-        return f"({Report.lexeme_of(what.loc)})" + suffix
-
-    @staticmethod
-    def conversion_for(what: Expr, to: Type) -> Suggestion:
-        fix = Suggest.method_call_for(what, ".somemethod")
-
-        return Suggestion(
-            f"you can convert {what.type} to {to}",
-            f"converts {what.type} to {to}",
-            Suggest.replacement_loc_for(what),
-            fix
-        )
-
-    @staticmethod
-    def possible_conversions(to: Type, *nodes: Expr) -> List[Suggestion]:
-        may_be_converted = [n for n in nodes if n.type != to]
-        
-        return list(map(
-            lambda n: Suggest.conversion_for(n, to),
-            may_be_converted
-        ))
-
 
 class TypeErr(Err):
     def __init__(self, msg: str, locus: Loc, *exprs: Expr):
