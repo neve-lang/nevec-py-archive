@@ -167,12 +167,16 @@ class TypeCheck(Visit[Ast, bool]):
         key_type = table.type.key
         val_type = table.type.val
 
-        Assume.that(key_type.is_valid()).with_nodes(*not_ok_keys).or_fail(
-            Inform.type_of(first_val, saying="first val")
+        Assume.that(key_type.is_valid()).with_nodes(*not_ok_keys).with_types(
+            first_key.type
+        ).or_fail(
+            Inform.type_of(first_key, saying="first key")  
         )
 
-        Assume.that(val_type.is_valid()).with_nodes(*not_ok_vals).or_fail(
-            Inform.type_of(first_key, saying="first key")  
+        Assume.that(val_type.is_valid()).with_nodes(*not_ok_vals).with_types(
+            first_val.type
+        ).or_fail(
+            Inform.type_of(first_val, saying="first val")
         )
 
         return self.err()

@@ -24,6 +24,7 @@ class Assume:
         self.is_complete: bool = is_complete
 
         self.nodes_in_question: List[Expr] = [node]
+        self.types_in_question: List[Type] = [node.type]
 
     @staticmethod
     def same_type(a: Expr, b: Expr) -> "Assume":
@@ -48,18 +49,23 @@ class Assume:
         else:
             return what
 
-    def with_nodes(self, *node: Expr) -> Self:
-        self.nodes_in_question.append(*node)
+    def with_nodes(self, *nodes: Expr) -> Self:
+        self.nodes_in_question.extend(nodes)
+        return self.with_types(*[n.type for n in nodes])
+
+    def with_types(self, *types: Type) -> Self:
+        self.types_in_question.extend(types)
         return self
 
-    def with_only(self, *node: Expr) -> Self:
+    def with_only(self, *nodes: Expr) -> Self:
         self.without()
 
-        self.nodes_in_question.append(*node)
-        return self
+        return self.with_nodes(*nodes)
 
     def without(self) -> Self:
         self.nodes_in_question = []
+        self.types_in_question = []
+
         return self
 
     def are(self, what: Type | Callable[[Type], bool]) -> Self:
@@ -95,7 +101,8 @@ class Assume:
 
         at = at if at is not None else first_node.loc
 
-        types = [n.type for n in self.nodes_in_question]
+        types = [t for t in self.types_in_question]
+
         first_few_types = types[:2]
 
         saying = (

@@ -180,6 +180,7 @@ class Parse:
             self.curr = self.lex.next()
 
             if self.curr.type == TokType.NEWLINE:
+                self.prev = self.curr
                 continue
 
             if self.curr.type != TokType.ERR:
@@ -208,6 +209,12 @@ class Parse:
             return True
 
         return False
+
+    def had_newline(self) -> bool:
+        return self.prev.type == TokType.NEWLINE
+
+    def is_at_end(self) -> bool:
+        return self.check(TokType.EOF)
 
     def consume(self) -> Tok:
         tok = self.curr
@@ -245,19 +252,19 @@ class Parse:
 
     def equality(self) -> Comparison:
         return self.bin_op(
-            Comparison, 
-            self.comparison, 
-            TokType.EQ, 
+            Comparison,
+            self.comparison,
+            TokType.EQ,
             TokType.NEQ
         ) 
 
     def comparison(self) -> Comparison:
         return self.bin_op(
             Comparison,
-            self.bit_shift, 
-            TokType.GT, 
-            TokType.GTE, 
-            TokType.LT, 
+            self.bit_shift,
+            TokType.GT,
+            TokType.GTE,
+            TokType.LT,
             TokType.LTE
         )
 
@@ -313,7 +320,10 @@ class Parse:
                 expr = self.fun_call(expr, parens=True)
                 continue
 
-            if TokType.is_expr_starter(self.curr.type):
+            if (
+                TokType.is_expr_starter(self.curr.type) and
+                not self.had_newline()
+            ):
                 expr = self.fun_call(expr)
                 continue
 

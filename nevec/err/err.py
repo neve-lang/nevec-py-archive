@@ -14,6 +14,9 @@ def join(*parts: str) -> str:
 def offset(*parts: str, by=0) -> str:
     return " " * by + join(*parts)
 
+def digits_in(max_line: int) -> int:
+    return len(str(max_line))
+
 class NoteType(Enum):
     HARMLESS = auto()
     ERR = auto()
@@ -38,6 +41,10 @@ class Note:
     @staticmethod
     def fix(where: Loc, msg: str) -> "Note":
         return Note(NoteType.FIX, where, msg)
+
+    @staticmethod
+    def err(where: Loc, msg: str) -> "Note":
+        return Note(NoteType.ERR, where, msg)
 
     def underline(self, col=1, initial_col=0) -> Tuple[int, str]:
         loc = self.loc
@@ -123,7 +130,7 @@ class Line:
             Color.RESET,
             offending_line,
 
-            by=max_line - len(line_str)
+            by=digits_in(max_line) - len(line_str)
         )
 
         notes = self.emit_notes(max_line)
@@ -140,7 +147,7 @@ class Line:
             Color.RESET,
             self.header_msg,
 
-            by=max_line
+            by=digits_in(max_line)
         )
 
         return [header]
@@ -162,7 +169,7 @@ class Line:
             Color.GRAY,
             previous_line,
 
-            by=max_line - len(line_str)
+            by=digits_in(max_line) - len(line_str)
         )
 
         return [displayed_line]
@@ -183,7 +190,7 @@ class Line:
             " · ",
             self.emit_underlines(),
 
-            by=max_line
+            by=digits_in(max_line)
         )
 
         hangs = self.emit_hangs(self.notes, max_line)
@@ -214,7 +221,7 @@ class Line:
         
         if notes_left == []:
             return [
-                offset(Color.BLUE, " · ", Color.RESET, by=max_line)
+                offset(Color.BLUE, " · ", Color.RESET, by=digits_in(max_line))
             ]
 
         tail = notes_left[-1]
@@ -227,7 +234,7 @@ class Line:
             tail.msg,
             Color.RESET,
 
-            by=max_line
+            by=digits_in(max_line)
         )
 
         return [line] + self.emit_hangs(notes_left[:-1], max_line)
@@ -306,8 +313,7 @@ class Suggestion:
             self.loc,
             header_msg=self.header_msg
         ).add(
-            Note(
-                NoteType.FIX,
+            Note.fix(
                 self.loc,
                 self.fix_msg
             )
@@ -357,7 +363,7 @@ class Err:
             Color.RESET,
             self.msg,
 
-            by=max_line
+            by=digits_in(max_line)
         )
 
         locus = offset(
@@ -370,7 +376,7 @@ class Err:
             str(self.loc),
             Color.RESET,
 
-            by=max_line
+            by=digits_in(max_line)
         )
 
         lines_and_suggestions = self.lines + self.suggestions
@@ -385,7 +391,7 @@ class Err:
             " ╰─ ",
             Color.RESET,
 
-            by=max_line
+            by=digits_in(max_line)
         )
 
         return "\n".join([heading, locus, *lines, closing_thing])

@@ -238,9 +238,9 @@ class ConstFold(Pass):
 
         expr = None
         if bin_op.type == Types.INT:
-            expr = IInt(result, bin_op.loc, bin_op.type)
+            expr = IInt(int(result), bin_op.loc, bin_op.type)
         else:
-            expr = IFloat(result, bin_op.loc, bin_op.type)
+            expr = IFloat(float(result), bin_op.loc, bin_op.type)
 
         return Tac(dest_sym, expr, bin_op.loc)
 

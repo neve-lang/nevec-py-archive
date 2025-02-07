@@ -100,8 +100,7 @@ class TypeErr(Err):
                 head.loc, 
                 show_previous_line=current_line - 1 > previous_line
             ).add(
-                Note(
-                    NoteType.ERR,
+                Note.err(
                     head.loc,
                     str(head.type)
                 )
@@ -115,8 +114,7 @@ class TypeErr(Err):
 
         last_line = lines[-1]
         last_line.add(
-            Note(
-                NoteType.ERR,
+            Note.err(
                 head.loc,
                 str(head.type)
             )
