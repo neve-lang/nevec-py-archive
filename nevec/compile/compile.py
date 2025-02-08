@@ -131,7 +131,7 @@ class Compile(Visit[Ir, None]):
         const_index = self.const_indices[const.id]
 
         # TODO: implement for Opcode.CONST_LONG
-        self.emit(Instr(Opcode.CONST, reg, const_index), line)
+        self.emit(Instr(Opcode.PUSH, reg, const_index), line)
     
     def compile(self, ir: List[Tac]):
         if ir == []:
@@ -190,7 +190,7 @@ class Compile(Visit[Ir, None]):
         table = self.reg_of(table_set.table.sym)
         val = self.reg_of(table_set.expr.sym)
 
-        instr = Instr(Opcode.TABLE_SET, table, dest_reg, val)
+        instr = Instr(Opcode.TABLESET, table, dest_reg, val)
 
         self.emit(instr, table_set.loc.line);
 
@@ -207,7 +207,7 @@ class Compile(Visit[Ir, None]):
                 return
 
             case -1:
-                self.emit(Instr(Opcode.MINUS_ONE, dest_reg), line)
+                self.emit(Instr(Opcode.MINUSONE, dest_reg), line)
                 return
 
         self.emit_const(Num, i.value, dest_reg, line)
@@ -231,7 +231,7 @@ class Compile(Visit[Ir, None]):
 
     def visit_ITable(self, table: ITable, dest_reg: int):
         if table.keys == []:
-            instr = Instr(Opcode.TABLE_NEW, dest_reg)
+            instr = Instr(Opcode.TABLENEW, dest_reg)
             self.emit(instr, table.loc.line)
 
             return

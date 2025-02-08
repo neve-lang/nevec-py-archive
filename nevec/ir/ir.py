@@ -2,7 +2,6 @@ from typing import List
 
 from enum import auto, Enum
 
-from nevec.ast.ast import *
 from nevec.ast.type import Type, Types
 
 from nevec.ir.sym import *
@@ -88,7 +87,10 @@ class Tac:
         self.own_operand = operand
         return operand
 
-    def update(self, expr: IExpr):
+    def update(self, other: Self):
+        operand = other.operand()
+        expr = operand.expr
+
         self.expr = expr
 
         if self.own_operand is None:

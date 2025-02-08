@@ -47,6 +47,12 @@ class Type:
     def is_poisoned(self) -> bool:
         return self.kind == TypeKind.UNKNOWN
 
+    def is_invalid(self) -> bool:
+        return self == Types.UNKNOWN
+
+    def is_valid(self) -> bool:
+        return self != Types.UNKNOWN
+
     def unless_unknown(self, *others: "Type") -> "Type":
         if (
             list(filter(Type.is_poisoned, others)) != []
@@ -81,6 +87,9 @@ class TableType(Type):
 
     def is_poisoned(self) -> bool:
         return self.key.is_poisoned() or self.val.is_poisoned()
+
+    def is_valid(self) -> bool:
+        return self.key.is_valid() and self.val.is_valid()
 
 
 class Types:

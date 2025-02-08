@@ -14,6 +14,9 @@ def join(*parts: str) -> str:
 def offset(*parts: str, by=0) -> str:
     return " " * by + join(*parts)
 
+def digits_in(max_line: int) -> int:
+    return len(str(max_line))
+
 class NoteType(Enum):
     HARMLESS = auto()
     ERR = auto()
@@ -30,6 +33,18 @@ class Note:
         self.length: int = loc.true_col + loc.true_length - 2
 
         self.hang: int = loc.true_col + self.center - 1
+
+    @staticmethod
+    def harmless(where: Loc, msg: str) -> "Note":
+        return Note(NoteType.HARMLESS, where, msg)
+
+    @staticmethod
+    def fix(where: Loc, msg: str) -> "Note":
+        return Note(NoteType.FIX, where, msg)
+
+    @staticmethod
+    def err(where: Loc, msg: str) -> "Note":
+        return Note(NoteType.ERR, where, msg)
 
     def underline(self, col=1, initial_col=0) -> Tuple[int, str]:
         loc = self.loc
@@ -115,7 +130,7 @@ class Line:
             Color.RESET,
             offending_line,
 
-            by=max_line - len(line_str)
+            by=digits_in(max_line) - len(line_str)
         )
 
         notes = self.emit_notes(max_line)
@@ -132,7 +147,7 @@ class Line:
             Color.RESET,
             self.header_msg,
 
-            by=max_line
+            by=digits_in(max_line)
         )
 
         return [header]
@@ -154,7 +169,7 @@ class Line:
             Color.GRAY,
             previous_line,
 
-            by=max_line - len(line_str)
+            by=digits_in(max_line) - len(line_str)
         )
 
         return [displayed_line]
@@ -175,7 +190,7 @@ class Line:
             " · ",
             self.emit_underlines(),
 
-            by=max_line
+            by=digits_in(max_line)
         )
 
         hangs = self.emit_hangs(self.notes, max_line)
@@ -206,7 +221,7 @@ class Line:
         
         if notes_left == []:
             return [
-                offset(Color.BLUE, " · ", Color.RESET, by=max_line)
+                offset(Color.BLUE, " · ", Color.RESET, by=digits_in(max_line))
             ]
 
         tail = notes_left[-1]
@@ -219,7 +234,7 @@ class Line:
             tail.msg,
             Color.RESET,
 
-            by=max_line
+            by=digits_in(max_line)
         )
 
         return [line] + self.emit_hangs(notes_left[:-1], max_line)
@@ -285,21 +300,23 @@ class Suggestion:
         
         modified_line = "".join(chars)
 
-        as_line = Line(
-            self.loc,
-            header_msg=self.header_msg
-        ).add(
-            Note(
-                NoteType.FIX,
-                self.loc,
-                self.fix_msg
-            )
-        )
+        as_line = self.as_line()
 
         return as_line.emit(
             lines, 
             given_line=modified_line, 
             given_line_number=self.line
+        )
+
+    def as_line(self) -> Line:
+        return Line(
+            self.loc,
+            header_msg=self.header_msg
+        ).add(
+            Note.fix(
+                self.loc,
+                self.fix_msg
+            )
         )
 
     def get_len(self, s: Optional[str]=None) -> int:
@@ -332,12 +349,13 @@ class Err:
         self.lines.append(line)
         return self
 
-    def suggest(self, suggestion: Suggestion) -> Self:
-        self.suggestions.append(suggestion)
+    def suggest(self, *suggestions: Suggestion) -> Self:
+        self.suggestions.extend(suggestions)
         return self
 
     def emit(self) -> str:
         max_line = len(self.code_lines)
+        self.lines = self.cleanup_lines(self.lines)
 
         heading = offset(
             Color.RED, 
@@ -345,7 +363,7 @@ class Err:
             Color.RESET,
             self.msg,
 
-            by=max_line
+            by=digits_in(max_line)
         )
 
         locus = offset(
@@ -358,7 +376,7 @@ class Err:
             str(self.loc),
             Color.RESET,
 
-            by=max_line
+            by=digits_in(max_line)
         )
 
         lines_and_suggestions = self.lines + self.suggestions
@@ -373,10 +391,30 @@ class Err:
             " ╰─ ",
             Color.RESET,
 
-            by=max_line
+            by=digits_in(max_line)
         )
 
         return "\n".join([heading, locus, *lines, closing_thing])
+
+    def cleanup_lines(self, lines: List[Line]) -> List[Line]:
+        def remove_redundant_previous(
+            last_line: int,
+            lines: List[Line]
+        ):
+            if lines == []:
+                return
+
+            head = lines[0]
+
+            if head.line == last_line + 1:
+                head.show_previous_line = False
+
+            remove_redundant_previous(head.line, lines[1:])
+
+        sorted_lines = sorted(lines, key=lambda l: l.loc.line)
+        remove_redundant_previous(1, sorted_lines)
+
+        return sorted_lines
 
     def print(self):
         text = self.emit()

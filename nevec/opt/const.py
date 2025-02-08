@@ -12,17 +12,12 @@ class ConstFold(Pass):
             return
 
         opt = self.fold_bin_op(bin_op, ctx)
-
-        opt_operand = opt.operand()
-        ctx.update(opt_operand.expr)
+        ctx.update(opt)
         
-        left_sym = left.sym
-        right_sym = right.sym
-
         self.emit(opt)
 
-        self.elim_if_dead(left_sym)
-        self.elim_if_dead(right_sym)
+        self.elim_if_dead(left.sym)
+        self.elim_if_dead(right.sym)
 
     def visit_IConcat(self, concat: IConcat, ctx: Tac):
         left = concat.left
@@ -33,17 +28,12 @@ class ConstFold(Pass):
             return
 
         opt = self.fold_concat(concat, ctx)
-
-        opt_operand = opt.operand()
-        ctx.update(opt_operand.expr)
-
-        left_sym = left.sym
-        right_sym = right.sym
+        ctx.update(opt)
 
         self.emit(opt)
 
-        self.elim_if_dead(left_sym)
-        self.elim_if_dead(right_sym)
+        self.elim_if_dead(left.sym)
+        self.elim_if_dead(right.sym)
 
     def visit_IUnOp(self, un_op: IUnOp, ctx: Tac):
         operand = un_op.operand
@@ -53,15 +43,11 @@ class ConstFold(Pass):
             return
 
         opt = self.fold_un_op(un_op, ctx)
-
-        opt_operand = opt.operand()
-        ctx.update(opt_operand.expr)
-
-        operand_sym = operand.sym
+        ctx.update(opt)
 
         self.emit(opt)
 
-        self.elim_if_dead(operand_sym)
+        self.elim_if_dead(operand.sym)
 
     def fold_un_op(self, un_op: IUnOp, ctx: Tac) -> Tac:
         match un_op.type:
@@ -89,13 +75,7 @@ class ConstFold(Pass):
         # the only possible operand--right now--is Op.NEG
         result = -operand.value
 
-        expr = None
-        if isinstance(operand, IInt):
-            expr = IInt(result, un_op.loc, un_op.type) 
-        else:
-            expr = IFloat(result, un_op.loc, un_op.type)
-
-        return Tac(dest_sym, expr, un_op.loc)
+        return self.folded(dest_sym, un_op, result)
 
     def fold_bool(self, un_op: IUnOp, ctx: Tac) -> Tac:
         dest_sym = ctx.sym
@@ -130,9 +110,7 @@ class ConstFold(Pass):
                     "not implemented"
                 )
 
-        expr = IBool(result, un_op.loc)
-
-        return Tac(dest_sym, expr, un_op.loc)
+        return self.folded(dest_sym, un_op, result)
 
     def fold_show(self, un_op: IUnOp, ctx: Tac) -> Tac:
         dest_sym = ctx.sym
@@ -160,13 +138,7 @@ class ConstFold(Pass):
             case _:
                 result = repr(operand)
 
-        expr = IStr(
-            result,
-            un_op.loc,
-            un_op.type
-        )
-
-        return Tac(dest_sym, expr, un_op.loc)
+        return self.folded(dest_sym, un_op, result)
 
     def fold_bin_op(self, bin_op: IBinOp, ctx: Tac) -> Tac:
         left = bin_op.left
@@ -236,13 +208,7 @@ class ConstFold(Pass):
                     "not implemented"
                 )
 
-        expr = None
-        if bin_op.type == Types.INT:
-            expr = IInt(result, bin_op.loc, bin_op.type)
-        else:
-            expr = IFloat(result, bin_op.loc, bin_op.type)
-
-        return Tac(dest_sym, expr, bin_op.loc)
+        return self.folded(dest_sym, bin_op, result)
 
     def fold_comparison(self, bin_op: IBinOp, ctx: Tac) -> Tac:
         dest_sym = ctx.sym
@@ -264,9 +230,7 @@ class ConstFold(Pass):
         # ...  and this
         result = eval(f"{left} {bin_op.op_lexeme} {right}")
 
-        expr = IStr(result, bin_op.loc, bin_op.type)
-
-        return Tac(dest_sym, expr, bin_op.loc)
+        return self.folded(dest_sym, bin_op, result)
 
     def fold_concat(self, concat: IConcat, ctx: Tac) -> Tac:
         dest_sym = ctx.sym
@@ -280,12 +244,30 @@ class ConstFold(Pass):
 
         left = left_node.value
         right = right_node.value
-        
         result = left + right
 
-        expr = IStr(result, concat.loc, concat.type)
+        return self.folded(dest_sym, concat, result)
 
-        return Tac(dest_sym, expr, concat.loc)
+    def folded[T](self, dest_sym: Sym, node: IExpr, value: T) -> Tac:
+        expr = None
+
+        match value:
+            case str():
+                expr = IStr(value, node.loc, node.type)
+            
+            case int():
+                expr = IInt(int(value), node.loc, node.type)
+                
+            case float():
+                expr = IFloat(float(value), node.loc, node.type)
+
+            case bool():
+                expr = IBool(bool(value), node.loc)
+
+        if expr is None:
+            raise ValueError("optimization error:", expr)
+
+        return Tac(dest_sym, expr, node.loc)
 
     def propagate_operands(self, node: IBinOp | IConcat):
         left_sym = node.left.sym

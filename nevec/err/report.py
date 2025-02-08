@@ -24,3 +24,10 @@ class Report:
             msg,
             loc
         )
+
+    @staticmethod
+    def lexeme_of(loc: Loc) -> str:
+        line = Report.lines[loc.line - 1]
+        col = loc.col - 1
+
+        return line[col:col + loc.length]
