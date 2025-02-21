@@ -1,5 +1,3 @@
-from typing import Tuple
-
 from nevec.ast.ast import *
 from nevec.ast.visit import Visit
 
@@ -44,7 +42,7 @@ class ToIr(Visit[Ast, Tac]):
             expr.loc
         )
 
-        expr.sym.last_used(expr.next_moment())
+        expr.sym.last_used(self.next_moment())
 
         tac = Tac(
             ret.sym,
@@ -63,7 +61,7 @@ class ToIr(Visit[Ast, Tac]):
         
         expr = IUnOp(
             IUnOp.Op(un_op.op.value),
-            operand,
+            operand.operand(),
 
             un_op.loc,
             un_op.type
@@ -88,9 +86,10 @@ class ToIr(Visit[Ast, Tac]):
         op_lexeme = bitwise.tok.lexeme
 
         expr = IBinOp(
-            left,
+            left.operand(),
             IBinOp.Op(bitwise.op.value),
-            right,
+            right.operand(),
+
             op_lexeme,
 
             bitwise.loc,
@@ -118,9 +117,10 @@ class ToIr(Visit[Ast, Tac]):
         op_lexeme = comparison.tok.lexeme
 
         expr = IBinOp(
-            left,
+            left.operand(),
             IBinOp.Op(comparison.op.value),
-            right,
+            right.operand(),
+
             op_lexeme,
 
             comparison.loc,
@@ -148,9 +148,10 @@ class ToIr(Visit[Ast, Tac]):
         op_lexeme = arith.tok.lexeme
 
         expr = IBinOp(
-            left,
+            left.operand(),
             IBinOp.Op(arith.op.value),
-            right,
+            right.operand(),
+
             op_lexeme,
 
             arith.loc,
@@ -175,12 +176,9 @@ class ToIr(Visit[Ast, Tac]):
         left = self.visit(concat.left)
         right = self.visit(concat.right)
 
-        expr = IBinOp(
-            left,
-            IBinOp.Op(concat.op.value),
-            right,
-
-            "concat",
+        expr = IConcat(
+            left.operand(),
+            right.operand(),
 
             concat.loc,
             concat.type,
@@ -205,7 +203,7 @@ class ToIr(Visit[Ast, Tac]):
 
         expr = IUnOp(
             IUnOp.Op.SHOW,
-            operand,
+            operand.operand(),
             show.loc,
             show.type
         )
@@ -223,6 +221,51 @@ class ToIr(Visit[Ast, Tac]):
         )
 
         self.ops.append(tac)
+        return tac
+
+    def visit_Table(self, table: Table) -> Tac:
+        expr = ITable.empty(table.loc, table.type)
+
+        tac = Tac(self.new_sym(), expr, expr.loc)
+        self.ops.append(tac)
+
+        keys = [self.visit(k) for k in table.keys]
+        vals = [self.visit(v) for v in table.vals]
+
+        exprs = list(map(
+            lambda i: TableSet(
+                tac.operand(),
+                keys[i].operand(),
+                vals[i].operand(),
+
+                table.type,
+                table.loc
+            ),
+            range(len(table.keys)) 
+        ))
+
+        tacs = [
+            Tac(e.key.sym, e, e.loc)
+            for e in exprs
+        ]
+
+        list(map(self.ops.append, tacs)) 
+
+        moment = self.next_moment()
+
+        # i'm truly sorry about all this
+        list(map(
+            lambda i: keys[i].sym.last_used(moment - len(keys) + i), 
+            range(len(keys))
+        ))
+
+        list(map(
+            lambda i: vals[i].sym.last_used(moment - len(keys) + i), 
+            range(len(vals))
+        ))
+
+        tac.sym.uses += len(keys)
+
         return tac
 
     def visit_Int(self, i: Int) -> Tac:

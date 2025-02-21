@@ -7,7 +7,6 @@ from nevec.err.report import Report
 
 from nevec.lex.tok import Loc
 
-
 class TypeErr(Err):
     def __init__(self, msg: str, locus: Loc, *exprs: Expr):
         self.msg: str = msg
@@ -20,28 +19,47 @@ class TypeErr(Err):
             )
 
         self.err = self.make_err()
-        self.emit()
 
     @override
     def emit(self) -> str:
         return self.err.emit()
 
-    def add(self, note: Note, on_line: int):
+    def show(self, line: Line) -> Self:
+        self.err.lines.append(line)
+        return self
+
+    def add(self, note: Note, on_line: Optional[int]=None) -> Self:
+        on_line = on_line if on_line is not None else note.loc.line
+
         lines = self.err.lines 
         found = list(filter(lambda l: l.line == on_line, lines))
 
         if found == []:
-            raise ValueError(
-                f"instance of TypeErr does not display line #{on_line}"
-            )
+            line = Line(Loc(1, on_line, 1))
+            line.add(note)
+
+            self.err.lines.append(line) 
+            return self
 
         line = found[0]
         line.add(note)
 
         return self
 
-    def suggest(self, suggestion: Suggestion) -> Self:
-        self.err.suggest(suggestion)
+    def add_all(self, *notes: Note) -> Self:
+        list(map(self.add, notes))
+        return self
+
+    def info(self, msg: str, at: Loc) -> Self:
+        return self.add(
+            Note.harmless(
+                at,
+                msg
+            )
+        )
+
+    def suggest(self, *suggestion: Suggestion) -> Self:
+        self.err = self.err.suggest(*suggestion)
         return self
 
     def make_err(self) -> Err:
@@ -49,6 +67,8 @@ class TypeErr(Err):
 
         first_line = Line(first_expr.loc)
         lines = self.make_lines(self.exprs, [first_line])
+
+        lines = sorted(lines, key=lambda l: l.loc.line)
 
         err = Report.err(
             self.msg,
@@ -80,8 +100,7 @@ class TypeErr(Err):
                 head.loc, 
                 show_previous_line=current_line - 1 > previous_line
             ).add(
-                Note(
-                    NoteType.ERR,
+                Note.err(
                     head.loc,
                     str(head.type)
                 )
@@ -95,8 +114,7 @@ class TypeErr(Err):
 
         last_line = lines[-1]
         last_line.add(
-            Note(
-                NoteType.ERR,
+            Note.err(
                 head.loc,
                 str(head.type)
             )

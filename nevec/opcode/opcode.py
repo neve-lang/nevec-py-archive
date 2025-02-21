@@ -3,8 +3,8 @@ from enum import auto, Enum
 from nevec.opcode.emit import Emit
 
 class Opcode(Enum):
-    CONST = auto()
-    CONST_LONG = auto()
+    PUSH = auto()
+    PUSHLONG = auto()
 
     TRUE = auto()
     FALSE = auto()
@@ -12,13 +12,13 @@ class Opcode(Enum):
 
     ZERO = auto()
     ONE = auto()
-    MINUS_ONE = auto()
+    MINUSONE = auto()
 
     NEG = auto()
     NOT = auto()
-    IS_NIL = auto()
-    IS_NOT_NIL = auto()
-    IS_ZERO = auto()
+    ISNIL = auto()
+    ISNOTNIL = auto()
+    ISZ = auto()
     SHOW = auto()
 
     ADD = auto()
@@ -27,17 +27,22 @@ class Opcode(Enum):
     DIV = auto()
     SHL = auto()
     SHR = auto()
-    BIT_AND = auto()
-    BIT_XOR = auto()
-    BIT_OR = auto()
+    BAND = auto()
+    XOR = auto()
+    BOR = auto()
     NEQ = auto()
     EQ = auto()
-    GREATER = auto()
-    LESS = auto()
-    GREATER_EQ = auto()
-    LESS_EQ = auto()
+    GT = auto()
+    LT = auto()
+    GTE = auto()
+    LTE = auto()
 
     CONCAT = auto()
+    UCONCAT = auto()
+
+    TABLENEW = auto()
+    TABLESET = auto()
+    TABLEGET = auto()
 
     RET = auto()
     

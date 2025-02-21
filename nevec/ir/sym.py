@@ -11,8 +11,7 @@ class Lifetime:
         assert self.last is not None and other.last is not None
 
         return (
-            (self.first >= other.first and self.last <= other.last) or
-            (other.first >= self.first and other.last <= self.last)
+            other.first < self.last and other.last > self.first
         )
     
     def is_valid_in(self, moment: Moment) -> bool:
@@ -44,10 +43,7 @@ class Sym[T]:
         self.lifetime: Optional[Lifetime] = None
 
     def rename(self, after: Self):
-        if self.index < after.index:
-            return
-
-        self.index = after.index
+        self.index = after.index + 1
         self.full_name = self.name + str(self.index)
 
     def propagate(self):
@@ -62,6 +58,13 @@ class Sym[T]:
         assert self.lifetime is not None
 
         return self.lifetime.is_valid_in(moment)
+
+    def copy(self) -> "Sym":
+        return Sym(
+            self.name,
+            self.index,
+            self.first
+        )
 
     def __repr__(self) -> str:
         return self.full_name
@@ -93,8 +96,39 @@ class Syms:
 
         return self.next_available_name(name, index + 1)
 
+    def next_after(self, sym: Sym) -> Optional[Sym]:
+        index = sym.index + 1
+
+        next_name = f"{sym.name}{index}"
+
+        return self.syms.get(next_name)
+
     def cleanup(self):
+        def give_new_name(syms: Dict[str, Sym], current: Sym) -> Sym:
+            found = next(
+                (
+                    s 
+                    for s in reversed(syms.values())
+                    if s.name == current.name
+                ),
+                Sym(current.name, -1, current.first)
+            )
+
+            current.rename(after=found)
+            
+            return current
+
+        def add_to(syms: Dict[str, Sym], sym: Sym):
+            new_sym = give_new_name(syms, sym)
+            syms[new_sym.full_name] = new_sym
+
         self.syms = {n: s for n, s in self.syms.items() if s.uses > 0}
+
+        new_syms = {}
+
+        list(map(lambda s: add_to(new_syms, s), self.syms.values()))
+
+        self.syms = new_syms
 
     def values(self) -> List[Sym]:
         return list(self.syms.values())

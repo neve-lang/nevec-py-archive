@@ -180,6 +180,7 @@ class Parse:
             self.curr = self.lex.next()
 
             if self.curr.type == TokType.NEWLINE:
+                self.prev = self.curr
                 continue
 
             if self.curr.type != TokType.ERR:
@@ -208,6 +209,12 @@ class Parse:
             return True
 
         return False
+
+    def had_newline(self) -> bool:
+        return self.prev.type == TokType.NEWLINE
+
+    def is_at_end(self) -> bool:
+        return self.check(TokType.EOF)
 
     def consume(self) -> Tok:
         tok = self.curr
@@ -245,19 +252,19 @@ class Parse:
 
     def equality(self) -> Comparison:
         return self.bin_op(
-            Comparison, 
-            self.comparison, 
-            TokType.EQ, 
+            Comparison,
+            self.comparison,
+            TokType.EQ,
             TokType.NEQ
         ) 
 
     def comparison(self) -> Comparison:
         return self.bin_op(
             Comparison,
-            self.bit_shift, 
-            TokType.GT, 
-            TokType.GTE, 
-            TokType.LT, 
+            self.bit_shift,
+            TokType.GT,
+            TokType.GTE,
+            TokType.LT,
             TokType.LTE
         )
 
@@ -313,7 +320,10 @@ class Parse:
                 expr = self.fun_call(expr, parens=True)
                 continue
 
-            if TokType.is_expr_starter(self.curr.type):
+            if (
+                TokType.is_expr_starter(self.curr.type) and
+                not self.had_newline()
+            ):
                 expr = self.fun_call(expr)
                 continue
 
@@ -323,7 +333,7 @@ class Parse:
             #   "Hello, "
             #   "world!"
             # )
-            if expr.type == Types.STR and self.check(TokType.STR):
+            if expr.type.is_str() and self.check(TokType.STR):
                 expr = self.str_concat(expr)
                 continue
             
@@ -333,21 +343,9 @@ class Parse:
         return expr
 
     def fun_call(self, callee: Expr, parens=False) -> Expr:
-        if callee.type == Types.STR:
-            if parens:
-                self.show_err(
-                    Report.err(
-                        "string concatenation may not have parentheses",
-                        self.prev.loc
-                    ).show(
-                        Line(self.prev.loc).add(Note(
-                            NoteType.ERR,
-                            self.prev.loc,
-                            "may not have parentheses"
-                        ))
-                    )
-                )
+        _ = parens
 
+        if callee.type.is_str():
             return self.str_concat(callee)
 
         raise NotImplementedError("function calls not implemented yet")
@@ -389,6 +387,9 @@ class Parse:
 
             case TokType.LPAREN:
                 return self.grouping()
+
+            case TokType.LBRACKET:
+                return self.list_or_table()
 
             case TokType.STR:
                 return self.str_lit()
@@ -461,3 +462,56 @@ class Parse:
 
         loc = left_paren.union_hull(loc_end)
         return Parens(grouped, loc)
+
+    def list_or_table(self) -> Expr:
+        left_bracket = self.consume().loc
+
+        if self.match(TokType.COL):
+            return self.empty_table(left_bracket)
+
+        first_expr = self.expr()
+
+        if self.match(TokType.COL):
+            return self.table(left_bracket, first_expr)
+
+        raise NotImplementedError("lists not implemented yet")
+
+    def table(self, left_bracket: Loc, first_key: Expr) -> Table:
+        first_val = self.expr()
+
+        keys = [first_key]
+        vals = [first_val]
+
+        while self.match(TokType.COMMA):
+            key = self.expr()
+            keys.append(key)
+
+            self.consume_expect(TokType.COL)
+
+            val = self.expr()
+            vals.append(val)
+
+        right_bracket = self.consume_expect(TokType.RBRACKET)
+
+        loc_end = (
+            right_bracket.loc 
+            if right_bracket is not None 
+            else self.prev.loc
+        )
+
+        loc = left_bracket.union_hull(loc_end)
+
+        return Table(keys, vals, loc)
+    
+    def empty_table(self, left_bracket: Loc) -> Table:
+        right_bracket = self.consume_expect(TokType.RBRACKET)
+        
+        loc_end = (
+            right_bracket.loc 
+            if right_bracket is not None 
+            else self.prev.loc
+        )
+
+        loc = left_bracket.union_hull(loc_end)
+
+        return Table.empty(loc)

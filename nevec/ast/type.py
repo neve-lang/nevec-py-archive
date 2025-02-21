@@ -9,15 +9,20 @@ class TypeKind(Enum):
     FLOAT = auto()
     BOOL = auto()
     NIL = auto()
+
     STR = auto()
+    STR8 = auto()
     STR16 = auto()
     STR32 = auto()
+
+    TABLE = auto()
 
 
 @dataclass
 class Type:
     kind: TypeKind
     name: str
+    is_mutable: bool = False
 
     def is_num(self) -> bool:
          return (
@@ -28,6 +33,7 @@ class Type:
     def is_str(self) -> bool:
         return (
             self == Types.STR or
+            self == Types.STR8 or
             self == Types.STR16 or
             self == Types.STR32
         )
@@ -40,6 +46,12 @@ class Type:
 
     def is_poisoned(self) -> bool:
         return self.kind == TypeKind.UNKNOWN
+
+    def is_invalid(self) -> bool:
+        return self == Types.UNKNOWN
+
+    def is_valid(self) -> bool:
+        return self != Types.UNKNOWN
 
     def unless_unknown(self, *others: "Type") -> "Type":
         if (
@@ -62,14 +74,35 @@ class Type:
         return self.name
 
 
+class TableType(Type):
+    def __init__(self, key: Type, val: Type):
+        self.kind: TypeKind = TypeKind.TABLE
+
+        self.key: Type = key
+        self.val: Type = val
+
+        self.name = f"[{self.key}: {self.val}]"
+
+        self.is_mutable = True
+
+    def is_poisoned(self) -> bool:
+        return self.key.is_poisoned() or self.val.is_poisoned()
+
+    def is_valid(self) -> bool:
+        return self.key.is_valid() and self.val.is_valid()
+
+
 class Types:
     UNKNOWN = Type(TypeKind.UNKNOWN, "Unknown")
     UNKNOWN_SND = Type(TypeKind.UNKNOWN_SND, "Unknown")
+
     INT = Type(TypeKind.INT, "Int")
     FLOAT = Type(TypeKind.FLOAT, "Float")
     BOOL = Type(TypeKind.BOOL, "Bool")
     NIL = Type(TypeKind.NIL, "Nil")
+
     STR = Type(TypeKind.STR, "Str")
+    STR8 = Type(TypeKind.STR8, "Str8")
     STR16 = Type(TypeKind.STR16, "Str16")
     STR32 = Type(TypeKind.STR32, "Str32")
 

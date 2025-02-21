@@ -26,12 +26,11 @@ class Compile(Visit[Ir, None]):
 
         self.peephole: Peephole = Peephole()
 
-        self.next_const_index: int = 0
         self.next_instr_offset: int = 0
 
         self.debug_header_length: int = 1
 
-        self.const_ids: Dict[Any, int] = {}
+        self.consts: List[Const] = []
         self.const_indices: Dict[int, int] = {}
 
         self.emit_first_bytes()
@@ -58,8 +57,6 @@ class Compile(Visit[Ir, None]):
         list(map(lambda b: to.write(b), byte_list))
 
     def finalize(self):
-        last_line = self.debug_header_bytes[-1]
-
         debug_header_length = Emit.encode_int(self.debug_header_length, 2)
 
         self.debug_header_bytes = [
@@ -76,19 +73,25 @@ class Compile(Visit[Ir, None]):
     def reg_of(self, sym: Sym) -> int:
         return self.graph.get_reg(sym)
 
-    def make_const[T](self, const_type: type[Const], value: T) -> Const:
-        if value in self.const_ids:
-            id = self.const_ids[value]
-            return const_type(value, id)
+    def get_const(self, const: Const) -> Optional[Const]:
+        return next(
+            (c for c in self.consts if c == const),
+            None
+        )
 
-        next_id = len(self.const_ids)
+    def make_const[T](self, const_type: type[Const], value: T) -> Const:
+        next_id = len(self.consts)
         const = const_type(value, next_id)
 
-        self.const_ids[value] = next_id
-         
-        self.const_indices[const.id] = self.next_const_index
-        self.next_const_index += 1 
+        existing_const = self.get_const(const)
 
+        if existing_const is not None:
+            return existing_const
+
+        self.consts.append(const)
+
+        self.const_indices[const.id] = next_id
+         
         const_bytes = const.emit()
         self.const_header_bytes.extend(const_bytes)
 
@@ -128,7 +131,7 @@ class Compile(Visit[Ir, None]):
         const_index = self.const_indices[const.id]
 
         # TODO: implement for Opcode.CONST_LONG
-        self.emit(Instr(Opcode.CONST, reg, const_index), line)
+        self.emit(Instr(Opcode.PUSH, reg, const_index), line)
     
     def compile(self, ir: List[Tac]):
         if ir == []:
@@ -169,6 +172,28 @@ class Compile(Visit[Ir, None]):
 
         self.emit(instr, bin_op.loc.line)
 
+    def visit_IConcat(self, concat: IConcat, dest_reg: int):
+        left = self.reg_of(concat.left.sym)
+        right = self.reg_of(concat.right.sym)
+
+        instr = Instr(
+            concat.op(),
+
+            dest_reg,
+            left,
+            right
+        )
+
+        self.emit(instr, concat.loc.line)
+
+    def visit_TableSet(self, table_set: TableSet, dest_reg: int):
+        table = self.reg_of(table_set.table.sym)
+        val = self.reg_of(table_set.expr.sym)
+
+        instr = Instr(Opcode.TABLESET, table, dest_reg, val)
+
+        self.emit(instr, table_set.loc.line);
+
     def visit_IInt(self, i: IInt, dest_reg: int):
         line = i.loc.line
 
@@ -182,7 +207,7 @@ class Compile(Visit[Ir, None]):
                 return
 
             case -1:
-                self.emit(Instr(Opcode.MINUS_ONE, dest_reg), line)
+                self.emit(Instr(Opcode.MINUSONE, dest_reg), line)
                 return
 
         self.emit_const(Num, i.value, dest_reg, line)
@@ -200,7 +225,23 @@ class Compile(Visit[Ir, None]):
         )
 
     def visit_IStr(self, s: IStr, dest_reg: int):
-        self.emit_const(StrLit, s.value, dest_reg, s.loc.line)
+        value = (s.encoding(), s.value, s.is_interned)
+
+        self.emit_const(StrLit, value, dest_reg, s.loc.line)
+
+    def visit_ITable(self, table: ITable, dest_reg: int):
+        if table.keys == []:
+            instr = Instr(Opcode.TABLENEW, dest_reg)
+            self.emit(instr, table.loc.line)
+
+            return
+
+        keys = [k.const() for k in table.keys]
+        vals = [v.const() for v in table.vals]
+        
+        entries = TableLit.make_entries(keys, vals)
+
+        self.emit_const(TableLit, entries, dest_reg, table.loc.line)
 
     def visit_INil(self, nil: INil, dest_reg: int):
         self.emit(Instr(Opcode.NIL, dest_reg), nil.loc.line)

@@ -1,1 +1,1 @@
-"Obs#{true}nts"
+"My table: #{["hey": 10, "1 + 2": 20]}"

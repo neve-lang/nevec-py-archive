@@ -3,10 +3,20 @@ from enum import Enum, auto
 from typing import Optional, Self
 
 class Loc:
-    def __init__(self, col: int, line: int, length: int):
+    def __init__(
+        self, 
+        col: int, 
+        line: int,
+        length: int,
+        true_col: Optional[int]=None,
+        true_length: Optional[int]=None
+    ):
         self.col: int = col
         self.line: int = line
         self.length: int = length
+
+        self.true_col: int = true_col if true_col else col
+        self.true_length: int = true_length if true_length else length
 
         self.on_multiple_lines: bool = False
 
@@ -22,16 +32,30 @@ class Loc:
             else a.col + 1
         )
 
+        true_col = (
+            (a.true_col + b.true_col) // 2
+            if a.line == b.line
+            else a.true_col + 1
+        )
+
         length = (
             b.col - a.col 
             if a.line == b.line 
             else 1
         )
 
+        true_length = (
+            b.true_col - a.true_col
+            if a.line == b.line
+            else 1
+        )
+
         return Loc(
             col,
             a.line,
-            length
+            length,
+            true_col,
+            true_length
         )
 
     @staticmethod
@@ -39,22 +63,36 @@ class Loc:
         return Loc(
             other.col + other.length,
             other.line,
+            1,
+            other.true_col + other.true_length,
             1
         )
 
     def copy(self):
-        return Loc(self.col, self.line, self.length)
+        return Loc(
+            self.col, 
+            self.line, 
+            self.length,
+            self.true_col,
+            self.true_length
+        )
     
-    def advance(self):
+    def advance(self, char_size=1):
         self.length += 1
+        self.true_length += char_size
 
     def newline(self):
         self.col = 0
         self.line += 1
 
+        self.true_col = 0
+
     def sync(self):
         self.col += self.length
         self.length = 0
+
+        self.true_col += self.true_length
+        self.true_length = 0
 
     # not using `Self` here because silly mypy thinks Loc ≠ Self@Loc
     def union_hull(self, other: "Loc") -> "Loc":
@@ -76,9 +114,13 @@ class Loc:
         min_col = min(self.col, other.col)
         max_col = max(self.col, other.col)
 
-        length = max_col - min_col + max_loc.length
+        min_true_col = min(self.true_col, other.true_col)
+        max_true_col = max(self.true_col, other.true_col)
 
-        return Loc(min_col, self.line, length)
+        length = max_col - min_col + max_loc.length
+        true_length = max_true_col - min_true_col + max_loc.true_length
+
+        return Loc(min_col, self.line, length, min_true_col, true_length)
 
     def __eq__(self, other: Self):
         return (
@@ -93,6 +135,7 @@ class Loc:
 
 class TokType(Enum):
     SEMICOL = auto()
+    COL = auto()
     COMMA = auto()
     DOT = auto()
     DOT_DOT = auto()
@@ -182,7 +225,7 @@ class TokType(Enum):
 class TokTypes:
     KEYWORDS = {
         "and": TokType.AND,
-        "bitor": TokType.BIT_OR,
+        "bor": TokType.BIT_OR,
         "class": TokType.CLASS,
         "do": TokType.DO,
         "else": TokType.ELSE,
@@ -209,6 +252,7 @@ class TokTypes:
 
     TOKS = {
         ";": TokType.SEMICOL,
+        ":": TokType.COL,
         ",": TokType.COMMA,
         ".": TokType.DOT,
         "..": TokType.DOT_DOT,

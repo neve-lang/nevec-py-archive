@@ -1,13 +1,13 @@
 import test
 
-from nevec.check.check import Check
+from nevec.check.type import TypeCheck
 from nevec.parse.parse import Parse
 
 def all_ok(input) -> bool:
     parse = Parse(input)
     ast = parse.parse()
 
-    return Check().visit(ast)
+    return not TypeCheck().visit(ast)
 
 class TestCheck:
     def test_one(self):
