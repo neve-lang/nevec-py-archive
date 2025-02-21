@@ -2,6 +2,8 @@
 
 Neve is a modern, hybrid-paradigm programming language designed to deliver reliability through static typing, while providing users a soothing* syntax to work with.
 
+> We are currently working on rewriting the Neve compiler in Kotlin.  Progress can be tracked on the `feature/rewrite-compiler-in-kt` branch.
+
 ## Example
 
 ```rb
