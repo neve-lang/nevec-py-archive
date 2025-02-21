@@ -7,7 +7,7 @@ Neve is a modern, hybrid-paradigm programming language designed to deliver relia
 ## Example
 
 ```rb
-idea Nat = Int where self >= 0
+let Nat = Int where self >= 0
 
 fun fib(n Nat)
   match n
